@@ -1,0 +1,14 @@
+/*
+*.out
+
+!**/.keep
+
+!src
+!paqFe
+!test
+
+test/data
+
+!.gitignore
+!CMakeLists.txt
+!Readme.md
