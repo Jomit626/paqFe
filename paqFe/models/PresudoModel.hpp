@@ -10,7 +10,7 @@ public:
   void init();
 
   Prob predict(uint8_t bit) {
-    return ProbEven;
+    return ProbEven - 1 + bit * 2;
   };
   
   Context getContext() {

@@ -2,13 +2,14 @@
 
 #include "Mixer.hpp"
 #include "models/PresudoModel.hpp"
+#include "models/MatchModel.hpp"
 
 #include <type_traits>
 
 namespace paqFe {
 
 template<typename ... Models>
-class PredictorWithMixer : public Mixer<Models...> {
+class PredictorWithOutMixer : public Models... {
 
 };
 

@@ -7,17 +7,6 @@
 
 using namespace paqFe;
 
-class A {
-public:
-  int f() {
-    return 1;
-  }
-};
-
-class B : public A {
-
-};
-
 int main(int argc, char** argv) {
   int opt;
   OpMode mode = OpMode::Comresss;

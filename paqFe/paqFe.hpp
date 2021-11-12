@@ -183,6 +183,6 @@ private:
 
 };
 
-typedef CompressEngine<PresudoModel<ProbEven>> Comressor;
+typedef CompressEngine<MatchModel<8192,8192,32>> Comressor;
 
 }

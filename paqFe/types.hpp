@@ -16,4 +16,9 @@ enum OpMode {
   Decompress
 };
 
+template<typename T>
+constexpr bool isPow2(const T& t) {
+  return (t > 0 && (((t & (t - 1)) == 0)));
+}
+
 }
