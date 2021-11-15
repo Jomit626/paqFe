@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+namespace paqFe {
 
 struct Header
 {
@@ -9,3 +10,5 @@ struct Header
     uint64_t dw;
   } origin_size;
 };
+
+}

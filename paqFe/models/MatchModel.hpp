@@ -50,6 +50,9 @@ class MatchModel {
   int use_match = 0;
   int prev_expect_bit;
 public:
+
+  static constexpr int n_output = 1;
+
   MatchModel() {
     memset(history, 0x00, sizeof(history));
     memset(hashtable, 0x00, sizeof(hashtable));
@@ -60,7 +63,7 @@ public:
     
   };
 
-  Prob predict(uint8_t bit) {
+  void predict(uint8_t bit, Prob* pp) {
     uint32_t prob;
 
     byte = (byte << 1) | bit;
@@ -89,7 +92,7 @@ public:
     } else {
       prob = ProbEven;
     }
-    return prob;
+    *pp = prob;
   };
   
   Context getContext() {

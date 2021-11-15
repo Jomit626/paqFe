@@ -11,6 +11,11 @@
 namespace paqFe {
 
 template<typename ... Models>
+class Engine {
+  Predictor<Models...> predictor;
+};
+
+template<typename ... Models>
 class CompressEngine {
   const OpMode m;
   FILE *f = NULL;
@@ -65,7 +70,7 @@ public:
         }
 
         uint8_t bit = byte & 0x1;
-        prob_next = predictor.predict(bit);
+        predictor.predict(bit, &prob_next);
       }
 
       dst[i] = byte;
@@ -77,11 +82,14 @@ public:
   size_t write(const uint8_t *src, size_t n) {
     assert(m == OpMode::Comresss);
 
+    Prob p;
+
     for(int i=0;i<n;i++) {
       uint8_t byte = src[i];
       for(int j=7;j>=0;j--) {
         uint8_t bit = (byte >> j) & 0x1;
-        buf_size += coder.encode(bit, predictor.predict(bit), &buf[buf_size]);
+        predictor.predict(bit, &p);
+        buf_size += coder.encode(bit, p, &buf[buf_size]);
       }
 
       if(buf_size > 16) {

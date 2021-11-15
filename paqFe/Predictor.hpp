@@ -14,10 +14,8 @@ class PredictorWithOutMixer : public Models... {
 };
 
 template<typename ... Models>
-class Predictor : public std::conditional< sizeof...(Models)>=2, Mixer<Models...>, Models...>::type {
+class Predictor : public Mixer<Models...> {
 
 };
-
-typedef Predictor<PresudoModel<ProbEven>> DefaultPredictor;
 
 }

@@ -5,8 +5,8 @@
 
 namespace paqFe {
 
-typedef uint16_t Weight;
-typedef uint16_t Prob;
+typedef int32_t Weight;
+typedef uint32_t Prob;
 typedef uint8_t Context;
 
 constexpr Prob ProbEven = 2048;
