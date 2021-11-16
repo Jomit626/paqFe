@@ -4,9 +4,7 @@ set (CMAKE_CXX_STANDARD 17)
 
 project(pasFe)
 
-include_directories("../paqFe")
-
-include_directories("src/include")
+include_directories("include")
 
 aux_source_directory("src" DIR_SRCS)
 aux_source_directory("src/models" DIR_SRCS)
