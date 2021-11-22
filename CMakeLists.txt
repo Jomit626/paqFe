@@ -1,14 +1,26 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
-set (CMAKE_CXX_STANDARD 17)
+project(
+  paqFe 
+  VERSION 0.0.1
+  DESCRIPTION "A header-only C++ compression library using a PAQ-varient algorithm adapted for text compression and FPGA implementations."
+  HOMEPAGE_URL "https://github.com/Jomit626/paqFe"
+  )
 
-project(pasFe)
+add_library(${PROJECT_NAME} INTERFACE)
 
-include_directories("include")
+target_include_directories(
+  ${PROJECT_NAME}
+  INTERFACE 
+    $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/include>)
 
-aux_source_directory("src" DIR_SRCS)
-aux_source_directory("src/models" DIR_SRCS)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
 
-add_executable(paqFe ${DIR_SRCS})
+aux_source_directory($<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/include> HeaderSrcs)
+target_sources(${PROJECT_NAME} PUBLIC ${HeaderSrcs})
 
-target_link_libraries(paqFe PUBLIC "m")
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  include(CTest)
+
+  include(test/CMakeLists.txt)
+endif()

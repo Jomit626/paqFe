@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROJ_FOLDER="$(dirname "$0")/.."
-PQAFE="$PROJ_FOLDER/build/paqFe"
+PQAFE="$PROJ_FOLDER/build/paqfe"
 
 DATA_FOLDER="$PROJ_FOLDER/test/data"
 TMP_FOLDER="$PROJ_FOLDER/tmp"
@@ -14,7 +14,7 @@ echo -e file\\tresult\\torigin\\tcompressed\\trate
 i=0
 for file in $(ls $DATA_FOLDER)
 do
-  $PQAFE -c -i $DATA_FOLDER/$file -o $TMP_FOLDER/$file.paqfe
+  $PQAFE -c -i $DATA_FOLDER/$file -o $TMP_FOLDER/$file.paqfe > $TMP_FOLDER/$file.paqfe.log
   $PQAFE -x -i $TMP_FOLDER/$file.paqfe -o $TMP_FOLDER/$file >/dev/null
   diff $DATA_FOLDER/$file $TMP_FOLDER/$file  >/dev/null
   diff_res=$?

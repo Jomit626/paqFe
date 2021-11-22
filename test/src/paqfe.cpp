@@ -39,38 +39,44 @@ int main(int argc, char** argv) {
     printf(
       "mode: %s\n"
       "input file:%s\n"
-      "output file:%s\n",
+      "output file:%s\n"
+      "mem usage:%d bytes\n"
+      ,
       mode == OpMode::Comresss ? "compress" : "decompress",
       input_pathname == NULL ? "null" : input_pathname,
-      output_pathname == NULL ? "null" : output_pathname
+      output_pathname == NULL ? "null" : output_pathname,
+      sizeof(Comressor)
     );
 
   if(mode == OpMode::Comresss) {
-    Comressor c(output_pathname, OpMode::Comresss);
+    Comressor *c = new Comressor(output_pathname, OpMode::Comresss);
     FILE* fin = fopen(input_pathname, "rb");
     uint8_t buf[1024];
     size_t n;
     while((n = fread(buf, 1, 1024, fin))) {
-      c.write(buf, n);
+      c->write(buf, n);
     }
 
     fclose(fin);
-    c.close();
+    c->close();
 
+    delete c;
   } else {
-    Comressor c(input_pathname, OpMode::Decompress);
-    printf("origin size:%d\n", c.size());
+    Comressor *c = new Comressor(input_pathname, OpMode::Decompress);
+    printf("origin size:%d\n", c->size());
     FILE* fout = fopen(output_pathname, "wb");
     uint8_t buf[1024];
-    sizeof(c);
+    sizeof(*c);
     size_t n;
-    while((n = c.read(buf, 1024))) {
+    while((n = c->read(buf, 1024))) {
       fwrite(buf, 1, n, fout);
     }
 
     fclose(fout);
-    c.close();
+    c->close();
+
+    delete c;
   }
 
-  return 1;
+  return 0;
 }

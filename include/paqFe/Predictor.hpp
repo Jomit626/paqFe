@@ -3,6 +3,7 @@
 #include "Mixer.hpp"
 #include "models/PresudoModel.hpp"
 #include "models/MatchModel.hpp"
+#include "models/StateModel.hpp"
 
 #include <type_traits>
 

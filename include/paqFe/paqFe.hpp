@@ -191,6 +191,6 @@ private:
 
 };
 
-typedef CompressEngine<MatchModel<8192,8192,32>> Comressor;
-
+// typedef CompressEngine<> Comressor;
+typedef CompressEngine<ContextModel<(1 << 24)>, MatchModel<8192,8192,32>> Comressor;
 }
