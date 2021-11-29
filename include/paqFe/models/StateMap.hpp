@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../types.hpp"
+#include <cassert>
 
 namespace paqFe {
 
@@ -94,6 +95,63 @@ public:
     state_prev = state & SizeMask;
     return infos[state_prev].prob >> 10;
   }
+
+  /*
+  ~StateMap() {
+    printf("Prob state_map[256] = {\n\t");
+    for(int i=0;i<256;i++) {
+      printf("0X%X, ", infos[i].prob >> 10);
+      if(((i + 1) % 8) == 0)
+        printf("\n\t");
+    }
+    printf("};\n");
+  }
+  */
+
+};
+
+class StaticStateMap {
+  const static Prob map[256];
+public:
+  Prob predict(uint8_t bit, uint32_t state) {
+    assert(state < 256);
+    return map[state];
+  }
+};
+
+const Prob StaticStateMap::map[256] = {
+  0X78B, 0X231, 0XD08, 0X14D, 0X678, 0X8F3, 0XE4D, 0XC9, 
+  0X473, 0X73E, 0X6E2, 0X7EC, 0XAF3, 0XA0F, 0XF22, 0XB0, 
+  0X4A2, 0X2DF, 0X3C4, 0X678, 0X800, 0X91F, 0X88D, 0X800, 
+  0X88D, 0X735, 0XAE0, 0XB64, 0XA76, 0XA55, 0XEF8, 0X95, 
+  0X387, 0X308, 0X725, 0X68B, 0X874, 0XA0A, 0XB64, 0XBD1, 
+  0XF6A, 0X70, 0X2B6, 0X419, 0X5B7, 0X500, 0X835, 0X6FB, 
+  0XB4A, 0XA22, 0XD2E, 0XCF2, 0XF47, 0X50, 0X2E2, 0X3E2, 
+  0X51F, 0X489, 0X6FC, 0X696, 0X971, 0X86E, 0XC12, 0XB0A, 
+  0XC53, 0XD93, 0XF82, 0X3F, 0X281, 0X1A9, 0X488, 0X402, 
+  0X662, 0X5BB, 0X81B, 0X771, 0XAA1, 0X95B, 0XD40, 0XBDC, 
+  0XE9B, 0XDB8, 0XFAF, 0X3C, 0X1F8, 0XA2, 0X4BC, 0X3C2, 
+  0XD75, 0XC3B, 0XB59, 0XDC6, 0XF96, 0X2F, 0X215, 0XBA, 
+  0X3C8, 0X33C, 0XD1C, 0XCA2, 0XE53, 0XDB6, 0XFC6, 0X57, 
+  0X1ED, 0X46, 0X3A8, 0X29B, 0XD34, 0XD37, 0XC25, 0XDC7, 
+  0XFB3, 0X18, 0X1BC, 0X124, 0X31E, 0X274, 0XE21, 0XD81, 
+  0XFA6, 0XE15, 0XFB9, 0X40, 0X1D4, 0X114, 0X307, 0X232, 
+  0XDCB, 0XDE2, 0XD1E, 0XE3A, 0XFDA, 0X3D, 0X191, 0XA7, 
+  0X2B7, 0X1D7, 0XE37, 0XDB2, 0XE0C, 0XE59, 0XFB3, 0X20, 
+  0X157, 0X800, 0X800, 0XE8C, 0XFC3, 0X2E, 0X164, 0XE75, 
+  0XFCC, 0X21, 0X130, 0XEAE, 0XFDE, 0XE, 0XF6, 0XECB, 
+  0XFD3, 0X15, 0X15A, 0XEE2, 0XFE7, 0XF, 0XF8, 0XEE2, 
+  0XFF2, 0X1D, 0XD2, 0XEE1, 0XFD0, 0X1D, 0XEA, 0XEFD, 
+  0XFE6, 0X25, 0X104, 0XEF0, 0XFE5, 0X10, 0X116, 0XEE9, 
+  0XFE4, 0X9, 0XB5, 0XF0D, 0XFF0, 0X10, 0XD5, 0XF1A, 
+  0XFCB, 0X20, 0X11C, 0XF03, 0XFF0, 0X2, 0XE4, 0XF57, 
+  0XFFC, 0X19, 0XB4, 0XF37, 0XFEF, 0X2, 0XCF, 0XF50, 
+  0XFEF, 0X1A, 0X84, 0XF27, 0XFD3, 0XA, 0XBC, 0XF59, 
+  0XFDF, 0XA, 0X8F, 0XF69, 0XFED, 0X13, 0XC6, 0XF13, 
+  0XFED, 0XA, 0X8E, 0XF59, 0XFDE, 0X13, 0X9B, 0XF4B, 
+  0XFFC, 0X13, 0X91, 0XF98, 0XFEC, 0X40, 0X6E, 0XF77, 
+  0XFEC, 0X2, 0X82, 0XF62, 0XFFB, 0X27, 0X7E, 0XF64, 
+  0XFFB, 0X1, 0X28, 0XFDD, 0XFF8, 0X800, 0X800, 0X800, 
 };
 
 }

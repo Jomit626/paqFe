@@ -56,7 +56,8 @@ class ContextModel {
   StateHashTable<size> hashtable;
 
   uint32_t Ctxes[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  StateMap<256> sm[4];
+  // StateMap<256> sm[4];
+  StaticStateMap sm;
   
   StateHashTableLine* lines[8];
   State o1[0x10000];
@@ -64,7 +65,7 @@ class ContextModel {
   int counter = 0;
   int binary_idx = 0;
 public:
-  static constexpr int n_output = 4;
+  static constexpr int n_output = 1;
 
   ContextModel() {
     memset(o1, 0x0, sizeof(o1));
@@ -81,28 +82,8 @@ public:
       searchHashTable();
 
     for(int i=0;i<n_output;i++) {
-      pp[i] = sm[i].predict(bit, lines[i]->states[binary_idx]);
+      pp[i] = sm.predict(bit, lines[i]->states[binary_idx]);
     }
-    
-    /*
-    o1[order1].next(bit);
-    counter++;
-    C0 = (C0 << 1) | bit;
-    
-    
-    if(counter == 8) {
-      Ctxes[0] = (uint32_t)C0 << 8;
-      counter = 0;
-      C0 = 1;
-    }
-
-    order1 = (Ctxes[0] + C0) & 0xFFFF;
-    printf("%x, %x\n", order1, uint8_t(o1[order1]));
-    *pp = sm[0].predict(bit, uint8_t(o1[order1]));
-
-    if(counter == 0)
-      binary_idx = 0;
-    */
   }
 
   Context getContext(int n = 0){
