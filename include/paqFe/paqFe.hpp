@@ -82,14 +82,12 @@ public:
   size_t write(const uint8_t *src, size_t n) {
     assert(m == OpMode::Comresss);
 
-    Prob p;
-
     for(int i=0;i<n;i++) {
       uint8_t byte = src[i];
       for(int j=7;j>=0;j--) {
         uint8_t bit = (byte >> j) & 0x1;
-        predictor.predict(bit, &p);
-        buf_size += coder.encode(bit, p, &buf[buf_size]);
+        buf_size += coder.encode(bit, prob_next, &buf[buf_size]);
+        predictor.predict(bit, &prob_next);
       }
 
       if(buf_size > 16) {

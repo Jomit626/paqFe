@@ -7,7 +7,6 @@ namespace paqFe {
 class Coder {
 protected:
   uint32_t low, high;
-  Prob prob;
 
 public:
   Coder() {};
@@ -15,11 +14,9 @@ public:
   void init()  {
     low = 0x0;
     high = 0xFFFFFFFF;
-    prob = ProbEven;
   };
 
-  size_t encode(uint8_t bit, const Prob prob_next, uint8_t *output) {
-    // printf("low:%x,high:%x,prob:%x\n", low, high, prob);
+  size_t encode(uint8_t bit, const Prob prob, uint8_t *output) {
     uint32_t range_d = high - low;
     uint64_t mul = (uint64_t)range_d * prob;
     uint32_t mid = low + (mul >> 12);
@@ -38,7 +35,6 @@ public:
       low = (low << 8);
     }
 
-    prob = prob_next;
     return n;
   };
 
