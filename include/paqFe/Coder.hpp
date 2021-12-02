@@ -27,14 +27,13 @@ public:
       low = mid + 1;
     
     size_t n = 0;
-    while (((high ^ low) >> 24) == 0) {
+    if (((high ^ low) >> 24) == 0) {
       output[n] = (high >> 24) & 0xFF;
-      n++;
+      n = 1;
 
       high = (high << 8) | 0xFF;
       low = (low << 8);
     }
-
     return n;
   };
 
@@ -52,13 +51,12 @@ public:
     }
 
     size_t n = 0;
-    while (((high ^ low) >> 24) == 0) {
-      n++;
+    if (((high ^ low) >> 24) == 0) {
+      n = 1;
 
       high = (high << 8) | 0xFF;
       low = (low << 8);
     }
-
     return n;
   };
 
