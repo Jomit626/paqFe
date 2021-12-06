@@ -157,6 +157,10 @@ class FineGridIStream {
   }
 
 public:
+  FineGridIStream() {
+
+  }
+
   int open(const char* pathname) {
     f = fopen(pathname, "rb");
 
@@ -164,10 +168,10 @@ public:
     return f != NULL;
   }
 
-  int read_header(Header* header) {
+  int read_header(Header* h) {
     size_t pos = ftell(f);
     fseek(f, 0, SEEK_SET);
-    int n = read_file(&header, sizeof(Header));
+    int n = read_file(h, sizeof(Header));
 
     fseek(f, pos, SEEK_SET);
     return n == sizeof(Header);

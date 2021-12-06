@@ -9,7 +9,10 @@ protected:
   uint32_t low, high;
 
 public:
-  Coder() {};
+  Coder() {
+    low = 0x0;
+    high = 0xFFFFFFFF;
+  };
 
   void init()  {
     low = 0x0;

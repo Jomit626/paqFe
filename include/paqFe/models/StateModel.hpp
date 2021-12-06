@@ -65,7 +65,7 @@ class ContextModel {
   int counter = 0;
   int binary_idx = 0;
 public:
-  static constexpr int n_output = 1;
+  static constexpr int n_output = 4;
 
   ContextModel() {
     memset(o1, 0x0, sizeof(o1));

@@ -4,6 +4,7 @@
 #include <cassert>
 
 #include "types.hpp"
+#include "StreamFile.hpp"
 #include "Header.hpp"
 #include "Coder.hpp"
 #include "Predictor.hpp"
@@ -17,6 +18,7 @@ class Engine {
 
 template<typename ... Models>
 class CompressEngine {
+protected:
   const OpMode m;
   FILE *f = NULL;
   Header header;
@@ -45,8 +47,6 @@ public:
       decode_pos = (decode_pos << 8) | get_byte();
       decode_pos = (decode_pos << 8) | get_byte();
     }
-
-    coder.init();
   };
 
   size_t size() {
@@ -189,6 +189,132 @@ private:
 
 };
 
+
+template<int N, typename ... Models>
+class CompressEngineNw {
+protected:
+  const OpMode m;
+  
+  Header header;  
+  size_t n_byte_processed = 0;
+
+  int coder_duty = 0;
+  Coder coder[N];
+  Prob prob_next[N] = { ProbEven };
+  uint32_t decode_pos[N];
+
+  Predictor<Models...> predictor;
+
+  union Stream {
+    FineGridIStream<N, 4096 * 16> in;
+    FineGridOStream<N, 4096 * 16> out;
+
+    Stream() { };
+  } stream;
+
+public:
+  CompressEngineNw(const char* pathname, OpMode m) 
+    : m(m) {
+    
+    if(m == OpMode::Comresss) {
+      stream.out.open(pathname);
+
+    } else if (m == OpMode::Decompress) {
+      stream.in.open(pathname);
+
+      stream.in.read_header(&header);
+
+      for(int i=0;i<N;i++) {
+        uint32_t pos = stream.in.read_byte(i);
+        pos = (pos << 8) | stream.in.read_byte(i);
+        pos = (pos << 8) | stream.in.read_byte(i);
+        pos = (pos << 8) | stream.in.read_byte(i);
+
+        decode_pos[i] = pos;
+      }
+    }
+  };
+
+  size_t size() {
+    return header.origin_size.dw;
+  };
+
+  size_t read(uint8_t *dst, size_t n) {
+    assert(m == OpMode::Decompress);
+
+    size_t n_byte_left = size() - n_byte_processed;
+    n = n > n_byte_left ? n_byte_left : n;
+
+    for(int i=0;i<n;i++) {
+      uint8_t byte = 0;
+      for(int j=7;j>=0;j--) {
+        uint32_t pos = decode_pos[coder_duty];
+
+        if(coder[coder_duty].decode(pos, prob_next[coder_duty], &byte))
+          decode_pos[coder_duty] = (pos << 8) | stream.in.read_byte(coder_duty);
+
+        coder_duty = (coder_duty + 1) % N;
+        uint8_t bit = byte & 0x1;
+        predictor.predict(bit, &prob_next[coder_duty]);
+      }
+
+      dst[i] = byte;
+    }
+
+    n_byte_processed += n;
+    return n;
+  };
+
+  size_t write(const uint8_t *src, size_t n) {
+    assert(m == OpMode::Comresss);
+
+    uint8_t out_byte;
+
+    for(int i=0;i<n;i++) {
+      uint8_t byte = src[i];
+      for(int j=7;j>=0;j--) {
+        uint8_t bit = (byte >> j) & 0x1;
+
+        if(coder[coder_duty].encode(bit, prob_next[coder_duty], &out_byte))
+          stream.out.write_byte(out_byte, coder_duty);
+        
+        coder_duty = (coder_duty + 1) % N;
+        predictor.predict(bit, &prob_next[coder_duty]);
+      }
+    }
+
+    n_byte_processed += n;
+    return n;
+  };
+
+  int close() {
+    if(m == OpMode::Comresss) {
+      header.origin_size.dw = n_byte_processed;
+
+      write_tail();
+
+      stream.out.write_header(&header);
+      return stream.out.close();
+    } else {
+      return stream.in.close();
+    }
+  }
+
+protected:
+  void write_tail() {
+    for(int i=0;i<N;i++) {
+      uint32_t tail = coder[i].get_tail();
+
+      stream.out.write_byte((tail >> 24) & 0xFF, i);
+      stream.out.write_byte((tail >> 16) & 0xFF, i);
+      stream.out.write_byte((tail >> 8) & 0xFF, i);
+      stream.out.write_byte((tail >> 0) & 0xFF, i);
+    }
+  }
+};
+
+
 // typedef CompressEngine<> Comressor;
-typedef CompressEngine<ContextModel<(1 << 24)>, MatchModel<8192,8192,32>> Comressor;
+typedef CompressEngineNw<8, ContextModel<(1 << 24)>, MatchModel<8192,8192,32>> Comressor;
+
 }
