@@ -40,9 +40,9 @@ public:
     return n;
   };
 
-  size_t decode(uint32_t pos, const Prob prob_next, uint8_t *byte) {
+  size_t decode(uint32_t pos, const Prob prob, uint8_t *byte) {
     uint32_t range_d = high - low;
-    uint64_t mul = (uint64_t)range_d * prob_next;
+    uint64_t mul = (uint64_t)range_d * prob;
     uint32_t mid = low + (mul >> 12);
 
     if(pos <= mid) {

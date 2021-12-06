@@ -205,12 +205,7 @@ protected:
 
   Predictor<Models...> predictor;
 
-  union Stream {
-    FineGridIStream<N, 4096 * 16> in;
-    FineGridOStream<N, 4096 * 16> out;
-
-    Stream() { };
-  } stream;
+  Stream<N> stream;
 
 public:
   CompressEngineNw(const char* pathname, OpMode m) 

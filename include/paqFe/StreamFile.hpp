@@ -5,203 +5,136 @@
 #include "Header.hpp"
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cassert>
+#include <cstring>
 
 namespace paqFe {
 
-template<size_t N, size_t BufSize = 1024>
-class FineGridOStream {
+template<size_t N>
+class FilesOStream {
+  static_assert(N <= 9 && N >= 1);
 
-  using DataPack = uint8_t[N];
-  static_assert(isPow2(BufSize));
-  static constexpr int BufMask = BufSize - 1;
+  FILE* h = nullptr;
+  FILE* f[N] = {nullptr};
 
-  DataPack buf[BufSize];
-  size_t buf_start = 0;
-  size_t buf_len[N] = {0};
-
-  FILE* f = nullptr;
-
-  size_t write_file(const void *src, size_t size) {
+  size_t write_file(const void *src, size_t size, FILE* f) {
     return fwrite(src, 1, size, f);
   };
 
-  size_t write_buf2file() {
-    size_t avail = BufSize;
-    for(int i=0;i<N;i++) {  // avail = min(data_len)
-      if(avail > buf_len[i])
-        avail = buf_len[i];
-    }
-
-    if(avail) {
-      for(int i=0;i<avail;i++) {
-        write_file(&buf[(buf_start + i) & BufMask], sizeof(DataPack));
-      }
-      
-      buf_start = (buf_start + avail) & BufMask;
-      for(int i=0;i<N;i++) {
-        buf_len[i] -= avail;
-      }
-    }
-
-    return avail;
-  } 
-
-  void flush_buf2file() {
-    int n = 0;
-    for(int i=0;i<N;i++) {  // n = max(data_len)
-      if(n < buf_len[i])
-        n = buf_len[i];
-    }
-
-    for(int i=0;i<N;i++) {  // aligment, fill empty with 0xFF
-      int len = buf_len[i];
-      buf_len[i] = 0; // empty it
-      while(len < n) {
-        buf[(buf_start + len) & BufMask][i] = 0xFF;
-        len ++;
-      }
-    }
-
-    for(int i=0;i<n;i++) {
-      write_file(&buf[(buf_start + i) & BufMask], sizeof(DataPack));
-    }
-  }
-
-  public:
-  FineGridOStream() {
+public:
+  FilesOStream() {
 
   }
 
   int open(const char* pathname) {
-    f = fopen(pathname, "wb");
+    int len = strlen(pathname);
+    char* pathname_subfix = (char*) malloc(sizeof(char) * (len + 8));
+    strcpy(pathname_subfix, pathname);
 
-    fseek(f, sizeof(Header), SEEK_SET);
-    return f != NULL;
+    pathname_subfix[len] = '.';
+    pathname_subfix[len + 2] = '\0';
+
+    int idx = len + 1;
+    for(int i=0;i<N;i++) {
+      pathname_subfix[idx] = '1' + i;
+      f[i] = fopen(pathname_subfix, "wb");
+    }
+
+    h = fopen(pathname, "wb");  // header
+
+    delete(pathname_subfix);
+    return h != NULL;
   }
 
-  int write_header(Header *h) {
+  int write_header(Header *header) {
+    fseek(h, 0, SEEK_SET);
+    int n = write_file(header, sizeof(Header), h);
 
-    size_t pos = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    int n = write_file(h, sizeof(Header));
-
-    fseek(f, pos, SEEK_SET);
     return n == sizeof(Header);
   }
 
   void write_byte(uint8_t byte, int n) {
-    int len = buf_len[n];
-    if(len >= BufSize) {
-      if(write_buf2file()) {
-        len = buf_len[n];
-      } else {
-        assert(("unexpected buf overflow.", 0));
-      }
-    }
-    
-    buf[(buf_start + len) & BufMask][n] = byte;
-    buf_len[n] = len + 1;
+    write_file(&byte, 1, f[n]);
   }
 
   int close() {
-    flush_buf2file();
-    return fclose(f);
+
+    fclose(h);
+    for(int i=0;i<N;i++)
+      fclose(f[i]);
+
+    return 0;
+
   }
 };
 
 
-template<size_t N, size_t BufSize = 1024>
-class FineGridIStream {
-  using DataPack = uint8_t[N];
-  static_assert(isPow2(BufSize));
-  static constexpr int BufMask = BufSize - 1;
+template<size_t N>
+class FilesIStream {
+  static_assert(N <= 9 && N >= 1);
 
-  DataPack buf[BufSize];
-  size_t buf_end = 0;
-  size_t buf_len[N] = {0};
+  FILE* h = nullptr;
+  FILE* f[N] = {nullptr};
 
-  FILE* f = nullptr;
-  bool eof = false;
-
-  size_t read_file(void* dst, size_t size) {
+  size_t read_file(void* dst, size_t size, FILE* f) {
     return fread(dst, 1, size, f);
   };
 
-  int read_file2buf() {
-    int max = 0;
-    for(int i=0;i<N;i++){
-      if(max < buf_len[i])
-        max = buf_len[i];
-    }
-    int avail = BufSize - max;
-
-    if(avail && !eof) {
-      for(int i=0;i<avail;i++) {
-        if(read_file(&buf[(buf_end + i) & BufMask], sizeof(DataPack)) != sizeof(DataPack)) {
-          eof = true;
-          avail = i;
-          break;
-        }
-      }
-
-      for(int i=0;i<N;i++) {
-        buf_len[i] += avail;
-      }
-
-      buf_end = (buf_end + avail) & BufMask;
-    }
-
-
-    return avail;
-  }
-
 public:
-  FineGridIStream() {
+  FilesIStream() {
 
   }
 
   int open(const char* pathname) {
-    f = fopen(pathname, "rb");
+    int len = strlen(pathname);
+    char* pathname_subfix = (char*) malloc(sizeof(char) * (len + 8));
+    strcpy(pathname_subfix, pathname);
 
-    fseek(f, sizeof(Header), SEEK_SET);
-    return f != NULL;
+    pathname_subfix[len] = '.';
+    pathname_subfix[len + 2] = '\0';
+
+    int idx = len + 1;
+    for(int i=0;i<N;i++) {
+      pathname_subfix[idx] = '1' + i;
+      f[i] = fopen(pathname_subfix, "rb");
+    }
+
+    h = fopen(pathname, "rb");  // header
+
+    delete(pathname_subfix);
+    return h != NULL;
   }
 
-  int read_header(Header* h) {
-    size_t pos = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    int n = read_file(h, sizeof(Header));
+  int read_header(Header* header) {
+    fseek(h, 0, SEEK_SET);
+    int n = read_file(header, sizeof(Header), h);
 
-    fseek(f, pos, SEEK_SET);
     return n == sizeof(Header);
   }
 
   uint8_t read_byte(int n) {
-    size_t len = buf_len[n];
-    if(len) {
-      buf_len[n] = len - 1;
-      return buf[(buf_end - len) & BufMask][n];
-
-    } else if(!len && eof) {
-      return 0xFF;
-
-    } else {
-      if(read_file2buf()) {
-        len = buf_len[n];
-
-        buf_len[n] = len - 1;
-        return buf[(buf_end - len) & BufMask][n];
-
-      } else {
-        return 0xFF;
-      }
-    }
+    uint8_t byte;
+    read_file(&byte, 1, f[n]);
+    return byte;
   }
 
   int close() {
-    return fclose(f);
+    fclose(h);
+    for(int i=0;i<N;i++)
+      fclose(f[i]);
+
+    return 0;
+    
   }
+};
+
+template<int N>
+union Stream {
+  FilesIStream<N> in;
+  FilesOStream<N> out;
+
+  Stream() { };
 };
 
 }
