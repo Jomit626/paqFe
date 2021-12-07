@@ -7,7 +7,7 @@
 namespace paqFe {
 
 struct StateHashTableLine {
-  State states[31];
+  State states[15];
   uint8_t checksum;
 };
 
@@ -77,7 +77,7 @@ public:
     for(int i=0;i<n_output;i++) {
       lines[i]->states[binary_idx].next(bit);
     }
-
+    assert(binary_idx >= 0 && binary_idx <= 15);
     if(updateContext(bit))
       searchHashTable();
 
