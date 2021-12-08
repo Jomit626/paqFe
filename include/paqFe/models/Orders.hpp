@@ -5,7 +5,7 @@
 #include "../types.hpp"
 #include "StateMap.hpp"
 
-namespace paqFe::internal::order {
+namespace paqFe::internal {
 
 struct Line {
   State states[15];
@@ -16,6 +16,9 @@ class Order1 {
   Line o1_lines[(1 << 12)];
 
   StaticStateMap sm;
+
+  //
+  bool first = true;
 
   // bit indicators in bitwise prediction
   int counter = 0;
@@ -34,6 +37,8 @@ public:
   }
 
   void predict(uint8_t bit, Prob *pp) {
+    first = false;
+
     // update states
     o1_line->states[binary_idx].next(bit);
 
@@ -53,15 +58,16 @@ public:
     int idx2 = 7 + (nibble >> 1);
 
     State* states = o1_line->states;
+    pp[0] = first ? ProbEven : sm.predict(o1_line->states[0]);
     states[0].next((nibble >> 3) & 0x1);
 
-    pp[0] = sm.predict(states[idx0]);
+    pp[1] = sm.predict(states[idx0]);
     states[idx0].next((nibble >> 2) & 0x1);
 
-    pp[1] = sm.predict(states[idx1]);
+    pp[2] = sm.predict(states[idx1]);
     states[idx1].next((nibble >> 1) & 0x1);
 
-    pp[2] = sm.predict(states[idx2]);
+    pp[3] = sm.predict(states[idx2]);
     states[idx2].next((nibble >> 0) & 0x1);
 
     C1 = (C1 << 4) | nibble;
@@ -74,23 +80,23 @@ public:
     idx1 = 3 + (nibble >> 2);
     idx2 = 7 + (nibble >> 1);
 
-    pp[3] = sm.predict(states[0]);
+    pp[4] = sm.predict(states[0]);
     states[0].next((nibble >> 3) & 0x1);
 
-    pp[4] = sm.predict(states[idx0]);
+    pp[5] = sm.predict(states[idx0]);
     states[idx0].next((nibble >> 2) & 0x1);
 
-    pp[5] = sm.predict(states[idx1]);
+    pp[6] = sm.predict(states[idx1]);
     states[idx1].next((nibble >> 1) & 0x1);
 
-    pp[6] = sm.predict(states[idx2]);
+    pp[7] = sm.predict(states[idx2]);
     states[idx2].next((nibble >> 0) & 0x1);
 
 
     C1 = byte;
     selectLines();
 
-    pp[7] = sm.predict(o1_line->states[0]);
+    first = false;
   }
 
   void predict_byte_batch(uint8_t *data, size_t size, Prob* pp) {

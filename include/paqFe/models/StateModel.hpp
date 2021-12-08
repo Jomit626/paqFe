@@ -4,7 +4,7 @@
 #include "../types.hpp"
 #include "StateMap.hpp"
 
-namespace paqFe {
+namespace paqFe::internal {
 
 struct StateHashTableLine {
   State states[15];

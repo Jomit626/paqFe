@@ -1,4 +1,6 @@
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+  include(CTest)
+  
   add_executable(paqfe test/src/paqfe.cpp)
   target_link_libraries(paqfe PUBLIC paqFe)
 

@@ -3,7 +3,7 @@
 #include "../types.hpp"
 #include <cassert>
 
-namespace paqFe {
+namespace paqFe::internal {
 
 static const uint8_t StateTable[256][2] = {
 {  1,  2},{  3,  5},{  4,  6},{  7, 10},{  8, 12},{  9, 13},{ 11, 14}, // 0

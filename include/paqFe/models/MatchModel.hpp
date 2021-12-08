@@ -8,7 +8,7 @@
 #include "CRC.hpp"
 #include "StateMap.hpp"
 
-namespace paqFe {
+namespace paqFe::internal {
 
 using ::std::sort;
 

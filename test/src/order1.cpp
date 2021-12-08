@@ -3,7 +3,7 @@
 #include <paqFe/types.hpp>
 #include <paqFe/models/Orders.hpp>
 
-using namespace paqFe::internal::order;
+using namespace paqFe::internal;
 using namespace paqFe;
 
 constexpr size_t n = 100000;
@@ -29,9 +29,9 @@ int main() {
     b.predict_byte(byte, &pp_test[8*i]);
   }
 
-  for(int i=0;i<n*8;i++) {
-    printf("%d,%d,%d,%d\n",i/8,i%8, pp[i], pp_test[i]);
-    if(pp[i] != pp_test[i])
+  for(int i=0;i<n*8 - 1;i++) {
+    printf("%d,%d,%d,%d\n",i/8,i%8, pp[i], pp_test[i + 1]);
+    if(pp[i] != pp_test[i + 1])
       return 1;
   }
   return 0;

@@ -37,7 +37,7 @@ StateMap::StateMap(int n): N(n), cxt(0) {
 
 int main() {
   StateMap sm_lpaq1;
-  paqFe::StateMap<256> sm_paqfe;
+  paqFe::internal::StateMap<256> sm_paqfe;
 
   int ctx = 1;
   for(int i=0;i<1024;i++) {

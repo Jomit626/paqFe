@@ -2,7 +2,7 @@
 
 #include "types.hpp"
 
-namespace paqFe {
+namespace paqFe::internal {
 
 class Coder {
 protected:

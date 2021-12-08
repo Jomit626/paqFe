@@ -12,6 +12,8 @@
 
 namespace paqFe {
 
+using namespace paqFe::internal;
+
 template<typename ... Models>
 class CompressEngine {
 protected:
@@ -266,19 +268,14 @@ public:
       uint8_t byte = src[i];
       predictor.predict_byte(byte, p);
 
-      for(int k=0;k<7;k++)
-        prob_next[k + 1] = p[k];
-
       for(int j=7;j>=0;j--) {
         uint8_t bit = (byte >> j) & 0x1;
 
-        if(coder[coder_duty].encode(bit, prob_next[coder_duty], &out_byte))
+        if(coder[coder_duty].encode(bit, p[7 - j], &out_byte))
           stream.out.write_byte(out_byte, coder_duty);
         
         coder_duty = (coder_duty + 1) % N;
       }
-
-      prob_next[0] = p[7];
     }
 
     n_byte_processed += n;
@@ -311,8 +308,6 @@ protected:
   }
 };
 
-
-using paqFe::internal::order::Order1;
 
 typedef CompressEngineNw<8, Order1> Comressor;
 

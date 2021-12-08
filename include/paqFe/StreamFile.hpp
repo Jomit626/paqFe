@@ -9,7 +9,7 @@
 #include <cassert>
 #include <cstring>
 
-namespace paqFe {
+namespace paqFe::internal {
 
 template<size_t N>
 class FilesOStream {

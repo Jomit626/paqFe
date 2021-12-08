@@ -7,6 +7,8 @@ project(
   HOMEPAGE_URL "https://github.com/Jomit626/paqFe"
   )
 
+option(BUILD_VERIFY "Build Verify Tools for RTL Model" on)
+
 add_library(${PROJECT_NAME} INTERFACE)
 
 target_include_directories(
@@ -19,8 +21,5 @@ target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
 aux_source_directory($<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/include> HeaderSrcs)
 target_sources(${PROJECT_NAME} PUBLIC ${HeaderSrcs})
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  include(CTest)
-
-  include(test/CMakeLists.txt)
-endif()
+include(test/CMakeLists.txt)
+include(verify/CMakeLists.txt)

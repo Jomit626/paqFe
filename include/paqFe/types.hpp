@@ -3,13 +3,14 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace paqFe {
+namespace paqFe::internal {
 
 typedef int32_t Weight;
 typedef uint32_t Prob;
 typedef uint8_t Context;
 
 constexpr Prob ProbEven = 2048;
+constexpr Prob ProbFirst = 2048;
 
 enum OpMode {
   Comresss,

@@ -3,7 +3,7 @@
 #include <cstring>
 #include "types.hpp"
 
-namespace paqFe {
+namespace paqFe::internal {
 
 static int squash(int d) {
   static const int t[33]={

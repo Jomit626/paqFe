@@ -2,7 +2,7 @@
 
 #include "../types.hpp"
 
-namespace paqFe {
+namespace paqFe::internal {
 
 template<size_t Width>
 class CRC {

@@ -7,7 +7,7 @@
 
 #include <type_traits>
 
-namespace paqFe {
+namespace paqFe::internal {
 
 template<typename ... Models>
 class PredictorWithOutMixer : public Models... {
