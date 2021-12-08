@@ -17,7 +17,7 @@ static int squash(int d) {
   return (t[d]*(128-w)+t[(d+1)]*w+64) >> 7;
 }
 
-template<typename ... Models>
+template<int N, typename ... Models>
 class Mixer : Models... {
 
   static constexpr int nmodels = sizeof...(Models);
@@ -32,8 +32,13 @@ class Mixer : Models... {
   }
   static constexpr int nfeatures = getFeaturesCnt<Models...>();
 
+  uint8_t ctx = 0;
+  uint8_t ctx_mask = 1;
+  int cnt = 0;
+
   //Weight W1[n][256][n];
-  Weight W[nfeatures];
+  int duty = 0;
+  Weight W[N][nfeatures];
   int32_t X[nfeatures];
   Prob P[nfeatures];
 
@@ -73,11 +78,11 @@ public:
     train(bit);
 
     predict<Models...>(bit, P, Ctx);
-    int old = P[0];
     for(int i=0;i<nfeatures;i++)
       X[i] = stretch[P[i]];
 
-    *pp = prev_prob = squash( dot(X, W, nfeatures) >> 16 );
+    duty = (duty + 1) % N;
+    *pp = prev_prob = squash( dot(X, W[duty], nfeatures) >> 16 );
     return;
   }
 
@@ -117,10 +122,10 @@ private:
   }
 
   void train(uint8_t bit) {
-    int loss = ((bit << 12) - prev_prob) * 10;
+    int loss = ((bit << 12) - prev_prob) * 16;
 
     for(int i=0;i<nfeatures;i++)
-      W[i] = W[i] + ((X[i] * loss) >> 16);
+      W[duty][i] = W[duty][i] + ((X[i] * loss) >> 16);
   }
 
 };

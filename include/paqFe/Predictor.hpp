@@ -14,8 +14,8 @@ class PredictorWithOutMixer : public Models... {
 
 };
 
-template<typename ... Models>
-class Predictor : public Mixer<Models...> {
+template<int N, typename ... Models>
+class Predictor : public Mixer<N, Models...> {
 
 };
 
