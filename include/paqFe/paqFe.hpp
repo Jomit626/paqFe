@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cassert>
 
+#include "models/Orders.hpp"
 #include "types.hpp"
 #include "StreamFile.hpp"
 #include "Header.hpp"
@@ -10,11 +11,6 @@
 #include "Predictor.hpp"
 
 namespace paqFe {
-
-template<typename ... Models>
-class Engine {
-  Predictor<Models...> predictor;
-};
 
 template<typename ... Models>
 class CompressEngine {
@@ -26,7 +22,7 @@ protected:
   size_t n_byte_processed = 0;
   Coder coder;
   
-  Predictor<Models...> predictor;
+  Predictor<1, Models...> predictor;
   
   uint8_t buf[32];
   size_t buf_size = 0;
@@ -203,7 +199,8 @@ protected:
   Prob prob_next[N] = { ProbEven };
   uint32_t decode_pos[N];
 
-  Predictor<Models...> predictor;
+  //Predictor<N, Models...> predictor;
+  PredictorWithOutMixer<Models...> predictor;
 
   Stream<N> stream;
 
@@ -264,9 +261,14 @@ public:
     assert(m == OpMode::Comresss);
 
     uint8_t out_byte;
-
+    Prob p[8];
     for(int i=0;i<n;i++) {
       uint8_t byte = src[i];
+      predictor.predict_byte(byte, p);
+
+      for(int k=0;k<7;k++)
+        prob_next[k + 1] = p[k];
+
       for(int j=7;j>=0;j--) {
         uint8_t bit = (byte >> j) & 0x1;
 
@@ -274,8 +276,9 @@ public:
           stream.out.write_byte(out_byte, coder_duty);
         
         coder_duty = (coder_duty + 1) % N;
-        predictor.predict(bit, &prob_next[coder_duty]);
       }
+
+      prob_next[0] = p[7];
     }
 
     n_byte_processed += n;
@@ -309,7 +312,8 @@ protected:
 };
 
 
-// typedef CompressEngine<> Comressor;
-typedef CompressEngineNw<8, ContextModel<(1 << 24)>, MatchModel<8192,8192,32>> Comressor;
+using paqFe::internal::order::Order1;
+
+typedef CompressEngineNw<8, Order1> Comressor;
 
 }

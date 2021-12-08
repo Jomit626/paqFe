@@ -117,6 +117,11 @@ public:
     assert(state < 256);
     return map[state];
   }
+  
+  Prob predict(uint32_t state) {
+    assert(state < 256);
+    return map[state];
+  }
 };
 
 const Prob StaticStateMap::map[256] = {
