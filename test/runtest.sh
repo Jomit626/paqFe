@@ -1,5 +1,14 @@
 #!/bin/bash
 
+set -e
+
+while getopts "w" arg
+do
+  case $arg in 
+    w) OVER_WRITE=1;;
+  esac
+done
+
 PROJ_FOLDER="$(dirname "$0")/.."
 PQAFE="$PROJ_FOLDER/build/paqfe"
 
@@ -38,4 +47,7 @@ do
   i=($i+1)
 done
 
-echo "$result " > $LAST_RESULT_FILE
+if [ $OVER_WRITE ]
+then
+  echo "$result " > $LAST_RESULT_FILE
+fi
