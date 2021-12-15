@@ -28,7 +28,7 @@ do
 
   # compress and decompress
   $PQAFE -c -i $DATA_FOLDER/$file -o $TMP_FOLDER/$file.paqfe > $TMP_FOLDER/$file.log
-  $PQAFE -x -i $TMP_FOLDER/$file.paqfe -o $TMP_FOLDER/$file >/dev/null
+  $PQAFE -x -i $TMP_FOLDER/$file.paqfe -o $TMP_FOLDER/$file > $TMP_FOLDER/$file.c.log
 
   # test result
   diff $DATA_FOLDER/$file $TMP_FOLDER/$file  >/dev/null

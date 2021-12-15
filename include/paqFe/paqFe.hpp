@@ -201,8 +201,8 @@ protected:
   Prob prob_next[N] = { ProbEven };
   uint32_t decode_pos[N];
 
-  //Predictor<N, Models...> predictor;
-  PredictorWithOutMixer<Models...> predictor;
+  Predictor<N, Models...> predictor;
+  //PredictorWithOutMixer<Models...> predictor;
 
   Stream<N> stream;
 
@@ -309,6 +309,6 @@ protected:
 };
 
 
-typedef CompressEngineNw<8, Order1> Comressor;
+typedef CompressEngineNw<8, Orders> Comressor;
 
 }

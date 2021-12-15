@@ -122,6 +122,10 @@ public:
     assert(state < 256);
     return map[state];
   }
+
+  Prob operator[](uint32_t state) {
+    return map[state];
+  }
 };
 
 const Prob StaticStateMap::map[256] = {
