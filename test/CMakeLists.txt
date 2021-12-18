@@ -10,6 +10,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   add_executable(order1 test/src/order1.cpp)
   target_link_libraries(order1 PUBLIC paqFe)
 
+  add_executable(statemap test/src/statemap.cpp)
+  target_link_libraries(statemap PUBLIC paqFe)
+
   add_test(NAME Order1Check COMMAND order1)
   add_test(NAME StateMapCheck COMMAND state)
 endif()
