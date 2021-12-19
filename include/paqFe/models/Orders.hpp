@@ -13,6 +13,7 @@ struct Line {
 };
 
 class Order1 {
+protected:
   Line o1_lines[(1 << 12)];
 
   StaticStateMap sm;
@@ -93,7 +94,7 @@ public:
     states[idx2].next((nibble >> 0) & 0x1);
 
 
-    C1 = byte;
+    C1 = (C1 << 4) | nibble;
     selectLines();
 
     first = false;
@@ -115,7 +116,7 @@ protected:
     C0 = (C0 << 1) | bit;
     if(counter == 8) {
 
-      C1 = C0;
+      C1 = (C1 << 4) | (C0 & 0xF);
       C0 = 0;
 
       counter = 0;
@@ -123,7 +124,7 @@ protected:
       return true;
     } else if(counter == 4){
       
-      C1 = (C1 << 4) | C0;
+      C1 = (C1 << 4) | (C0 & 0xF);
       binary_idx = 0;
       return true;
     }
@@ -132,11 +133,11 @@ protected:
   }
 
   void selectLines() {
-    o1_line = &o1_lines[C1];
+    o1_line = &o1_lines[C1 & 0xFFF];
     
-    if(o1_line->checksum != uint8_t(C1)) {
+    if(o1_line->checksum != (C1 & 0xFF)) {
       std::memset(o1_line, 0x00, sizeof(Line));
-      o1_line->checksum = uint8_t(C1);
+      o1_line->checksum = (C1 & 0xFF);
     }
   }
 };
