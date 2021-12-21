@@ -10,6 +10,7 @@
 !verify
 
 test/data
+verify/data
 verify/db
 
 !.gitignore

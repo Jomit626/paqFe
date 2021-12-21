@@ -5,9 +5,9 @@ set -e
 PROJ_FOLDER="$(dirname "$0")/.."
 
 DB_NAME=$1
-PROG=$PROJ_FOLDER/build/$DB_NAME
+PROG=$2
 
-DATA_FOLDER="$PROJ_FOLDER/test/data"
+DATA_FOLDER="$PROJ_FOLDER/verify/data"
 DB_FOLDER="$PROJ_FOLDER/verify/db"
 DB_FILE=$DB_FOLDER/$DB_NAME
 
