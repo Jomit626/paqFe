@@ -9,5 +9,6 @@ endfunction(add_verify_db name)
 
 add_verify_db(order1)
 add_verify_db(order1ctx)
+add_verify_db(coder)
 
 endif()
