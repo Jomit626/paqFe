@@ -10,9 +10,7 @@
 #include "Coder.hpp"
 #include "Predictor.hpp"
 
-namespace paqFe {
-
-using namespace paqFe::internal;
+namespace paqFe::internal {
 
 template<typename ... Models>
 class CompressEngine {
