@@ -20,4 +20,12 @@ add_verify_db(order1)
 add_verify_db(order1ctx)
 add_verify_db(coder)
 
+
+add_custom_target(
+  all-db-gen
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/verify/genDB.sh all ${CMAKE_BINARY_DIR}/paqfe
+  DEPENDS paqfe
+)
+add_dependencies(verify-db all-db-gen)
+
 endif()
