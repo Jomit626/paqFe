@@ -5,6 +5,7 @@
 
 #include <paqFe/paqFe.hpp>
 
+using namespace paqFe;
 using namespace paqFe::internal;
 
 FILE* gfout;

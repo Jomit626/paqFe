@@ -33,7 +33,7 @@ public:
   CompressEngine(const char* pathname, OpMode m)
     : m(m) {
     
-    if(m == OpMode::Comresss) {
+    if(m == OpMode::Compress) {
       open_as_output(pathname);
     } else if (m == OpMode::Decompress) {
       open_as_input(pathname);
@@ -76,7 +76,7 @@ public:
   };
 
   size_t write(const uint8_t *src, size_t n) {
-    assert(m == OpMode::Comresss);
+    assert(m == OpMode::Compress);
 
     for(int i=0;i<n;i++) {
       uint8_t byte = src[i];
@@ -98,7 +98,7 @@ public:
   };
 
   int close() {
-    if(m == OpMode::Comresss) {
+    if(m == OpMode::Compress) {
       header.origin_size.dw = n_byte_processed;
 
       write_tail();
@@ -182,6 +182,7 @@ private:
 
     return write_file(data, 4);
   }
+public:
 
 };
 
@@ -208,7 +209,7 @@ public:
   CompressEngineNw(const char* pathname, OpMode m) 
     : m(m) {
     
-    if(m == OpMode::Comresss) {
+    if(m == OpMode::Compress) {
       stream.out.open(pathname);
 
     } else if (m == OpMode::Decompress) {
@@ -258,7 +259,7 @@ public:
   };
 
   size_t write(const uint8_t *src, size_t n) {
-    assert(m == OpMode::Comresss);
+    assert(m == OpMode::Compress);
 
     uint8_t out_byte;
     Prob p[8];
@@ -281,7 +282,7 @@ public:
   };
 
   int close() {
-    if(m == OpMode::Comresss) {
+    if(m == OpMode::Compress) {
       header.origin_size.dw = n_byte_processed;
 
       write_tail();
@@ -303,6 +304,13 @@ protected:
       stream.out.write_byte((tail >> 8) & 0xFF, i);
       stream.out.write_byte((tail >> 0) & 0xFF, i);
     }
+  }
+public:
+  size_t read(char *dst, size_t n) {
+    return read((uint8_t*)(dst), n);
+  }
+  size_t write(const char *src, size_t n) {
+    return write((const uint8_t*)(src), n);
   }
 };
 
