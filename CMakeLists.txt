@@ -8,6 +8,7 @@ project(
   )
 
 option(BUILD_VERIFY "Build Verify Tools for RTL Model" on)
+option(BUILD_TESTING "Build test" on)
 
 add_library(${PROJECT_NAME} INTERFACE)
 

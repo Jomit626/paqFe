@@ -9,7 +9,7 @@ using namespace paqFe;
 
 int main(int argc, char** argv) {
   int opt;
-  OpMode mode = OpMode::Comresss;
+  OpMode mode = OpMode::Compress;
   int verobse = 0;
   size_t origin_size = 0;
   const char *input_pathname = NULL, *output_pathname = NULL;
@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
       verobse = 1;
       break;
     case 'c':
-      mode = OpMode::Comresss;
+      mode = OpMode::Compress;
       break;
     case 'x':
       mode = OpMode::Decompress;
@@ -42,40 +42,40 @@ int main(int argc, char** argv) {
       "output file:%s\n"
       "mem usage:%d bytes\n"
       ,
-      mode == OpMode::Comresss ? "compress" : "decompress",
+      mode == OpMode::Compress ? "compress" : "decompress",
       input_pathname == NULL ? "null" : input_pathname,
       output_pathname == NULL ? "null" : output_pathname,
-      sizeof(Comressor)
+      sizeof(paqFeFile)
     );
 
-  if(mode == OpMode::Comresss) {
-    Comressor *c = new Comressor(output_pathname, OpMode::Comresss);
+  if(mode == OpMode::Compress) {
+    paqFeFile *fout = new paqFeFile(output_pathname, OpMode::Compress);
     FILE* fin = fopen(input_pathname, "rb");
     uint8_t buf[1024];
     size_t n;
     while((n = fread(buf, 1, 1024, fin))) {
-      c->write(buf, n);
+      fout->write(buf, n);
     }
 
     fclose(fin);
-    c->close();
+    fout->close();
 
-    delete c;
+    delete fout;
   } else {
-    Comressor *c = new Comressor(input_pathname, OpMode::Decompress);
-    printf("origin size:%d\n", c->size());
+    paqFeFile *fin = new paqFeFile(input_pathname, OpMode::Decompress);
+    printf("origin size:%d\n", fin->size());
     FILE* fout = fopen(output_pathname, "wb");
     uint8_t buf[1024];
-    sizeof(*c);
+
     size_t n;
-    while((n = c->read(buf, 1024))) {
+    while((n = fin->read(buf, 1024))) {
       fwrite(buf, 1, n, fout);
     }
 
     fclose(fout);
-    c->close();
+    fin->close();
 
-    delete c;
+    delete fin;
   }
 
   return 0;

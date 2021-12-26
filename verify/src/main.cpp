@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
   FILE *fin = nullptr, *fout = nullptr;
 
   fin = fopen(input_pathname, "rb");
-  fout = fopen(input_pathname, "w");
+  fout = fopen(output_pathname, "w");
 
   if(!fin || !fout)
     return 1;

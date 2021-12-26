@@ -13,7 +13,7 @@ struct Line {
 };
 
 class Orders {
-
+protected:
 #define DECARE_SIZE(name, size) \
   static constexpr size_t name##Size = size;  \
   static constexpr size_t name##SizeMask = name##Size - 1;  \
@@ -21,8 +21,8 @@ class Orders {
 
   DECARE_SIZE(O1, 1ul << 12)
   DECARE_SIZE(O2, 1ul << 16)
-  DECARE_SIZE(O3, 1ul << 24)
-  DECARE_SIZE(O4, 1ul << 29)
+  DECARE_SIZE(O3, 1ul << 16)
+  DECARE_SIZE(O4, 1ul << 16)
 
 #undef DECARE_SIZE
 

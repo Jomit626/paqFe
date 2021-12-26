@@ -3,7 +3,14 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace paqFe::internal {
+namespace paqFe {
+
+enum OpMode {
+  Compress,
+  Decompress
+};
+
+namespace internal {
 
 typedef int32_t Weight;
 typedef uint32_t Prob;
@@ -11,11 +18,6 @@ typedef uint8_t Context;
 
 constexpr Prob ProbEven = 2048;
 constexpr Prob ProbFirst = 2048;
-
-enum OpMode {
-  Comresss,
-  Decompress
-};
 
 template<typename T>
 constexpr bool isPow2(const T& t) {
@@ -41,4 +43,5 @@ class FixedPoint {
 };
 */
 
+}
 }

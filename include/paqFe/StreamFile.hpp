@@ -37,7 +37,7 @@ public:
 
     int idx = len + 1;
     for(int i=0;i<N;i++) {
-      pathname_subfix[idx] = '1' + i;
+      pathname_subfix[idx] = '0' + i;
       f[i] = fopen(pathname_subfix, "wb");
     }
 
@@ -96,7 +96,7 @@ public:
 
     int idx = len + 1;
     for(int i=0;i<N;i++) {
-      pathname_subfix[idx] = '1' + i;
+      pathname_subfix[idx] = '0' + i;
       f[i] = fopen(pathname_subfix, "rb");
     }
 
