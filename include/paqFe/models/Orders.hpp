@@ -20,9 +20,9 @@ protected:
   static_assert(isPow2(name##Size));  \
 
   DECARE_SIZE(O1, 1ul << 12)
-  DECARE_SIZE(O2, 1ul << 16)
-  DECARE_SIZE(O3, 1ul << 16)
-  DECARE_SIZE(O4, 1ul << 16)
+  DECARE_SIZE(O2, 1ul << 20)
+  DECARE_SIZE(O3, 1ul << 21)
+  DECARE_SIZE(O4, 1ul << 22)
 
 #undef DECARE_SIZE
 
