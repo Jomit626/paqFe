@@ -65,7 +65,7 @@ class ContextModel {
   int counter = 0;
   int binary_idx = 0;
 public:
-  static constexpr int n_output = 4;
+  static constexpr int OutputCnt = 4;
 
   ContextModel() {
     memset(o1, 0x0, sizeof(o1));
@@ -74,26 +74,22 @@ public:
 
   void predict(uint8_t bit, Prob* pp) {
     
-    for(int i=0;i<n_output;i++) {
+    for(int i=0;i<OutputCnt;i++) {
       lines[i]->states[binary_idx].next(bit);
     }
     assert(binary_idx >= 0 && binary_idx <= 15);
     if(updateContext(bit))
       searchHashTable();
 
-    for(int i=0;i<n_output;i++) {
+    for(int i=0;i<OutputCnt;i++) {
       pp[i] = sm.predict(bit, lines[i]->states[binary_idx]);
     }
-  }
-
-  Context getContext(int n = 0){
-    return Ctxes[n];
   }
 
 private:
 
   void searchHashTable() {
-    for(int i=0;i<n_output;i++) {
+    for(int i=0;i<OutputCnt;i++) {
       lines[i] = hashtable[Ctxes[i]];
     }
   }

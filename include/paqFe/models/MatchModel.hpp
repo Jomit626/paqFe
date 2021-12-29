@@ -52,7 +52,7 @@ class MatchModel {
   int prev_expect_bit;
 public:
 
-  static constexpr int n_output = 1;
+  static constexpr int OutputCnt = 1;
 
   MatchModel() {
     memset(history, 0x00, sizeof(history));
@@ -96,10 +96,6 @@ public:
     *pp = prob;
   };
   
-  Context getContext() {
-    return 0;
-  };
-
 private:
 
   void calcute_hash(uint8_t byte) {

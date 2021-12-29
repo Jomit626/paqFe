@@ -17,7 +17,7 @@ public:
    * given a bit predict the prob of next bit being 1
    * the prob of very first bit is assumed to be [[ProbEven]]
   */
-  void predict(uint8_t bit, Prob *pp) {};
+  void predict(uint8_t bit, Prob *pp, Context *pctx) {};
 
   /* bytewise prediction matches RTL model
    * given a byte, predict the prob of the bits being 1 of that byte
@@ -37,10 +37,10 @@ public:
    * ...
    * !!!
   */
-  void predict_byte(uint8_t byte, Prob *pp) {};
+  void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t stride = OutputCnt) {};
 
   // batch mode for batter cache locality
-  void predict_byte_batch(uint8_t *data, size_t size, Prob* pp) {};
+  void predict_byte_batch(uint8_t *data, size_t size, Prob* pp, Context *pctx, size_t stride = OutputCnt) {};
 };
 
 }

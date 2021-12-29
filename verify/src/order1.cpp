@@ -13,7 +13,7 @@ void generate_db(FILE* fin, FILE* fout) {
   uint8_t data[128];
   size_t n = 0;
   while((n = fread(data, 1, 128, fin))) {
-    Prob p[8][model.n_output];
+    Prob p[8][model.OutputCnt];
     for(int i=0;i<n;i++) {
       uint8_t byte = data[i];
       model.predict_byte(byte, &p[0][0]);

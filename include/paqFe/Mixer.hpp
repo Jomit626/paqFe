@@ -27,9 +27,9 @@ class Mixer : Models... {
   template<typename M, typename ... Rest>
   static constexpr int getFeaturesCnt() {
     if constexpr (sizeof...(Rest)) {
-      return getFeaturesCnt<Rest...>() + M::n_output;
+      return getFeaturesCnt<Rest...>() + M::OutputCnt;
     } else {
-      return M::n_output;
+      return M::OutputCnt;
     }
   }
   static constexpr int nfeatures = getFeaturesCnt<Models...>();
@@ -39,13 +39,14 @@ class Mixer : Models... {
   uint8_t ctx_mask = 1;
   int cnt = 0;
 
-  //Weight W1[n][256][n];
   int duty = 0;
-  Weight W[N][nfeatures];
+
+  Weight W[N][256][nfeatures];  // 256 for per feature context
+
   int32_t X[nfeatures] = { ProbEven };
   Prob P[nfeatures];
 
-  Context Ctx[nmodels];
+  Context Ctx[N];
 
   Prob prev_prob = ProbEven; // stretch(ProbEven)
 
@@ -61,65 +62,73 @@ class Mixer : Models... {
     stretch[4095]=2047;
   }
 public:
-  static constexpr int n_output = 1;
+  static constexpr int OutputCnt = 1;
 
   Mixer() {
     memset(W, 0x00, sizeof(W));
+    memset(Ctx, 0x00, sizeof(Ctx));
+    
     init_stretch();
 
-    //prev_prob = stretch[ProbEven];
     for(int i=0;i<nfeatures;i++)
       X[i] = stretch[ProbEven];
   }
 
   Mixer(Models&&... models) 
     : Models(models)...{
-    // getContext();
-  }
-
-  void init() {
-    
   }
 
   void predict(uint8_t bit, Prob *pp) {
-    //if(!first)
-      train(bit);
-    //else
-    //  first = false;
-
-
-    predict<Models...>(bit, P, Ctx);
-    for(int i=0;i<nfeatures;i++)
-      X[i] = stretch[P[i]];
-
+    train(W[duty][Ctx[duty]], X, prev_prob, bit);
+    
     duty = (duty + 1) % N;
-    *pp = prev_prob = squash( dot(X, W[duty], nfeatures) >> 16 );
+    Context c0[nfeatures];
+
+    predict<Models...>(bit, P, c0);
+    Ctx[duty] = contextmix(c0, nfeatures);
+
+    for(int i=0;i<nfeatures;i++) {
+      X[i] = stretch[P[i]];
+    }
+
+    *pp = prev_prob = squash( dot(X, W[duty][Ctx[duty]], nfeatures) >> 16 );
     return;
+  }
+
+  Context contextmix(Context *pctx, size_t n) {
+    Context c = 0;
+    for(int i=0;i<n;i++) {
+      c += pctx[i];
+    }
+    return c;
   }
 
   void predict_byte(uint8_t byte, Prob *pp) {
     assert(("", duty == 0));
-    static_assert(N == 8);
+    static_assert(("Only support N=8", N == 8));
 
     Prob x0[8 * nfeatures];
+    Context c0[8 * nfeatures];
     int32_t x[8 * nfeatures];
-
-    predict_byte<Models...>(byte, &x0[0]);
-    for(int i=0;i<nfeatures * 8;i++)
+    predict_byte<Models...>(byte, &x0[0], &c0[0]);
+    for(int i=0;i<nfeatures * 8;i++) {
       x[i] = stretch[x0[i]];
+    }
+    for(int duty=0;duty<N;duty++) {
+      Ctx[duty] = contextmix(&c0[duty * nfeatures], nfeatures);
+    }
 
-    for(int i=0;i<8;i++) {
-      pp[i] = squash( dot(&x[nfeatures * i], W[i], nfeatures) >> 16 );
-
+    for(int duty=0;duty<N;duty++) {
+      pp[duty] = squash( dot(&x[nfeatures * duty], W[duty][Ctx[duty]], nfeatures) >> 16 );
     }
 
     if(first) {
       pp[0] = ProbEven;
       first = false;
     }
-    for(int i=0;i<8;i++) {
 
-      train(W[i], &x[nfeatures * i],  pp[i], (byte >> (7 - i)) & 0x1);
+    for(int duty=0;duty<N;duty++) {
+      train(W[duty][Ctx[duty]], &x[nfeatures * duty],  pp[duty], (byte >> (7 - duty)) & 0x1);
     }
     return ;
   }
@@ -127,30 +136,20 @@ public:
 private:
 
   template<typename M, typename ... Rest>
-  void predict(uint8_t bit, Prob *pp, Context* ctx) {
-    M::predict(bit, pp);
-    *ctx = M::getContext();
+  void predict(uint8_t bit, Prob *pp, Context* pctx) {
+    M::predict(bit, pp, pctx);
 
     if constexpr (sizeof...(Rest)) {
-      predict<Rest...>(bit, pp + M::n_output , ++ctx);
+      predict<Rest...>(bit, pp + M::OutputCnt, pctx + M::OutputCnt);
     }
   }
 
   template<typename M, typename ... Rest>
-  void predict_byte(uint8_t byte, Prob *pp) {
-    M::predict_byte(byte, pp, nfeatures);
+  void predict_byte(uint8_t byte, Prob *pp, Context* pctx) {
+    M::predict_byte(byte, pp, pctx, nfeatures);
 
     if constexpr (sizeof...(Rest)) {
-      predict_byte<Rest...>(byte, pp + M::n_output);
-    }
-  }
-
-  template<typename M, typename ... Rest>
-  void getContext(Context* ctx) {
-    *ctx = M::getContext();
-
-    if constexpr (sizeof...(Rest)) {
-      getContext<Rest...>(++ctx);
+      predict_byte<Rest...>(byte, pp + M::OutputCnt, pctx + M::OutputCnt);
     }
   }
 
@@ -160,7 +159,7 @@ private:
       s += a[i] * b[i];
     }
 
-    return s;
+    return s / n;
   }
 
   void train(uint8_t bit) {
@@ -168,7 +167,7 @@ private:
   }
 
   void train(Weight *w, int32_t *x, Prob y, uint8_t bit) {
-    int loss = ((bit << 12) - y) * 30;
+    int loss = ((bit << 12) - y) * 80;
 
     for(int i=0;i<nfeatures;i++)
       w[i] = w[i] + ((x[i] * loss) >> 16);
