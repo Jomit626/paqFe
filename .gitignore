@@ -8,10 +8,12 @@
 !paqFe
 !test
 !verify
+!eval
 
 test/data
 verify/data
 verify/db
+eval/result
 
 !.gitignore
 !CMakeLists.txt

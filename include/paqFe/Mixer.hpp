@@ -159,7 +159,7 @@ private:
       s += a[i] * b[i];
     }
 
-    return s / n;
+    return s;
   }
 
   void train(uint8_t bit) {
@@ -167,7 +167,7 @@ private:
   }
 
   void train(Weight *w, int32_t *x, Prob y, uint8_t bit) {
-    int loss = ((bit << 12) - y) * 80;
+    int loss = ((bit << 12) - y) * 8;
 
     for(int i=0;i<nfeatures;i++)
       w[i] = w[i] + ((x[i] * loss) >> 16);

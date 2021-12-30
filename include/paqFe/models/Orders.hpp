@@ -12,17 +12,20 @@ struct Line {
   uint8_t checksum;
 };
 
+template< size_t O2Size = 1ul << 20,
+          size_t O3Size = 1ul << 21,
+          size_t O4Size = 1ul << 22>
 class Orders {
 protected:
-#define DECARE_SIZE(name, size) \
-  static constexpr size_t name##Size = size;  \
+  static constexpr size_t O1Size = 1ul << 12;
+#define DECARE_SIZE(name) \
   static constexpr size_t name##SizeMask = name##Size - 1;  \
   static_assert(isPow2(name##Size));  \
 
-  DECARE_SIZE(O1, 1ul << 12)
-  DECARE_SIZE(O2, 1ul << 20)
-  DECARE_SIZE(O3, 1ul << 21)
-  DECARE_SIZE(O4, 1ul << 22)
+  DECARE_SIZE(O1)
+  DECARE_SIZE(O2)
+  DECARE_SIZE(O3)
+  DECARE_SIZE(O4)
 
 #undef DECARE_SIZE
 
@@ -159,10 +162,10 @@ protected:
   }
 
   bool updateContextNibble(uint8_t nibble) {
-    C1 = ((C1 << 4) | nibble) & O1SizeMask;
-    C2 = ((C2 << 4) | nibble) & O2SizeMask;
-    C3 = ((C3 << 4) | nibble) & O3SizeMask;
-    C4 = ((C4 << 4) | nibble) & O4SizeMask;
+    C1 = ((C1 << 4) | nibble) & 0xFFF;
+    C2 = ((C2 << 4) | nibble) & 0xFFFF;
+    C3 = ((C3 << 4) | nibble) & 0xFFFFFF;
+    C4 = ((C4 << 4) | nibble);
 
     return true;
   }
@@ -175,7 +178,7 @@ protected:
   }
 
   uint32_t hash(uint32_t val) {
-    return val * 12341234 + val + 3;
+    return (val * 123431523 + val - 3) ^ (val << 3);
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {

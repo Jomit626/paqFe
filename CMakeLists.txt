@@ -8,6 +8,7 @@ project(
   )
 
 option(BUILD_VERIFY "Build Verify Tools for RTL Model" on)
+option(BUILD_EVAL "Build Eval Tools for Models" on)
 option(BUILD_TESTING "Build test" on)
 
 add_library(${PROJECT_NAME} INTERFACE)
@@ -24,3 +25,4 @@ target_sources(${PROJECT_NAME} PUBLIC ${HeaderSrcs})
 
 include(test/CMakeLists.txt)
 include(verify/CMakeLists.txt)
+include(eval/CMakeLists.txt)
