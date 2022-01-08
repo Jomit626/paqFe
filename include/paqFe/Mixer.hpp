@@ -35,6 +35,10 @@ public:
     train(W[prev_ctx], X, prev_prob, bit);
   }
 
+  void update(uint8_t bit, Prob p) {
+    train(W[prev_ctx], X, p, bit);
+  }
+
 private:
   int32_t dot(int32_t* a, int32_t* b, int n) {
     int32_t s = 0;

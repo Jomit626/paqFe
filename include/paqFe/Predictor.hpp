@@ -19,7 +19,7 @@ class Predictor {
 
   int mixer_duty = 0;
 
-  bool first_n = false;
+  bool first = true;
 
 public:
   Predictor() {
@@ -37,7 +37,6 @@ public:
     Context ctx = contextSum(Ctx, Model::OutputCnt);
 
     mixers[mixer_duty].predict(P, ctx, pp);
-
   };
 
   void predict_byte(uint8_t byte, Prob *pp) {
@@ -50,16 +49,20 @@ public:
       uint8_t bit = (byte >> (7 - i)) & 0x1;
 
       Context ctx = contextSum(Ctxs[i], Model::OutputCnt);
-
-      mixers[mixer_duty].predict(Ps[i], ctx, &pp[i]);
-      mixers[mixer_duty].update(bit);
-      mixer_duty = (mixer_duty + 1) % N;
+    
+      mixers[(mixer_duty + i) % N].predict(Ps[i], ctx, &pp[i]);
     }
 
-    if(!first_n) {
+    if(first) {
       pp[0] = ProbEven;
-      first_n = true;
+      first = false;
     }
+
+    for(int i=0;i<8;i++) {
+      uint8_t bit = (byte >> (7 - i)) & 0x1;
+      mixers[(mixer_duty + i) % N].update(bit, pp[i]);
+    }
+    mixer_duty = (mixer_duty + 8) % N;
   };
 
 private:

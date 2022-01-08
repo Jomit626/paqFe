@@ -1,12 +1,12 @@
 #include <cstdio>
 
 #include <paqFe/types.hpp>
-#include <paqFe/Mixer.hpp>
+#include <paqFe/Predictor.hpp>
 
 using namespace paqFe::internal;
 using namespace paqFe;
 
-constexpr size_t n = 500000;
+constexpr size_t n = 200000;
 
 class PattenedModel {
   bool first = true;
@@ -17,13 +17,13 @@ public:
   void predict(uint8_t bit, Prob *pp, Context *pctx) {
     update(1);
     *pp = counter;
-    *pctx = counter & 1;
+    *pctx = counter & 15;
   }
 
   void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t stride = OutputCnt) {
     for(int i=0;i<8;i++) {
       pp[i * stride] = counter;
-      pctx[i * stride] = counter & 1;
+      pctx[i * stride] = counter & 15;
       update(1);
     }
     if(first) {
@@ -43,7 +43,7 @@ protected:
 };
 
 class PattenedModel2 {
-  int counter = 2001;
+  int counter = 128;
   bool first = true;
 public:
   static constexpr int OutputCnt = 2;
@@ -54,7 +54,7 @@ public:
     pctx[0] = counter & 1;
 
     pp[1] = 4096 - counter;;
-    pctx[1] = counter & 1;
+    pctx[1] = counter & 255;
   }
 
   void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t stride = OutputCnt) {
@@ -62,12 +62,14 @@ public:
       pp[i * stride] = counter;
       pctx[i * stride] = counter & 1;
       pp[i * stride + 1] = 4096 - counter;
-      pctx[i * stride + 1] = ~(counter & 1);
+      pctx[i * stride + 1] = counter & 255;
       update(1);
     }
     if(first) {
       pp[0] = ProbEven;
       pctx[0] = 0;
+      pp[1] = ProbEven;
+      pctx[1] = 0;
       first = false;
     }
   }
@@ -83,8 +85,8 @@ protected:
 
 
 int main() {
-  Mixer<8, PattenedModel,PattenedModel2> m_ref;
-  Mixer<8, PattenedModel,PattenedModel2> m;
+  Predictor<8, PattenedModel,PattenedModel2> m_ref;
+  Predictor<8, PattenedModel,PattenedModel2> m;
 
   Prob* pp = new Prob[n * 8];
   Prob* pp_test = new Prob[n * 8];
@@ -106,7 +108,7 @@ int main() {
   }
 
   for(int i=0;i<n*8 - 1;i++) {
-    printf("%d,%d,%d,%d\n",i/8,i%8, pp[i], pp_test[i]);
+    //printf("%d,%d,%d,%d\n",i/8,i%8, pp[i], pp_test[i]);
     if(pp[i] != pp_test[i]) {
       return 1;
     }
