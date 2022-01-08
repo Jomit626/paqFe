@@ -199,8 +199,6 @@ protected:
   uint32_t decode_pos[N];
 
   Predictor<N, Models...> predictor;
-  //PredictorWithOutMixer<Models...> predictor;
-
   Stream<N> stream;
 
 public:

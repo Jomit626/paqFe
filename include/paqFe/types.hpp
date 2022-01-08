@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "FixedPoint.hpp"
+
 namespace paqFe {
 
 enum OpMode {
@@ -30,18 +32,6 @@ static constexpr int max(int a, int b) {
   else
     return b;
 }
-/*
-template<int z, int x>
-class FixedPoint {
-  uint32_t x;
-  FixedPoint(uint32_t x) : x(x) {};
-
-  template<int z1, int x1>
-  FixedPoint<max(z, x1), max(z, x2)> operatro+(const FixedPoint<z1,x1>& other) {
-    return FixedPoint<std::max(z, x1), std::max(z, x2)> (x + other);
-  }
-};
-*/
 
 }
 }
