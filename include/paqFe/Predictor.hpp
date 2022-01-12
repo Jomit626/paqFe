@@ -21,6 +21,7 @@ class Predictor {
   Mixer<Model::OutputCnt> mixers[N];
 
   APM<1024> apms[N];
+  APM<4096> apms2[N];
 
   int mixer_duty = 0;
 
@@ -32,9 +33,9 @@ public:
   }
 
   void predict(uint8_t bit, Prob *pp) {
+    Prob px, p1;
     if(first) {
-      Prob dummy;
-      apms[0].predict(0, ProbEven, &dummy);
+      apms[0].predict(0, ProbEven, &px);
       first = false;
     }
     mixers[mixer_duty].update(bit);
@@ -48,15 +49,16 @@ public:
     m.predict(bit, P, Ctx);
     Context ctx = contextSum(Ctx, Model::OutputCnt);
 
-    mixers[mixer_duty].predict(P, ctx, pp);
-    Prob old = *pp;
-    apms[mixer_duty].predict(ctx, *pp, pp);
+    mixers[mixer_duty].predict(P, ctx, &px);
+    apms[mixer_duty].predict(ctx, px, &p1);
 
-  
+    *pp = (px + p1 * 3) / 4;
   };
 
   void predict_byte(uint8_t byte, Prob *pp) {
     Prob Ps[8][Model::OutputCnt];
+    Prob Px[8];
+    Prob P1[8];
     Context Ctxs[8][Model::OutputCnt];
     Context ctx[Model::OutputCnt];
 
@@ -67,22 +69,26 @@ public:
 
       ctx[i] = contextSum(Ctxs[i], Model::OutputCnt);
     
-      mixers[(mixer_duty + i) % N].predict(Ps[i], ctx[i], &pp[i]);
+      mixers[(mixer_duty + i) % N].predict(Ps[i], ctx[i], &Px[i]);
     }
 
     if(first) {
-      pp[0] = ProbEven;
+      Px[0] = ProbEven;
       ctx[0] = 0;
     }
 
     for(int i=0;i<8;i++) {
       uint8_t bit = (byte >> (7 - i)) & 0x1;
-      mixers[(mixer_duty + i) % N].update(bit, pp[i]);
+      mixers[(mixer_duty + i) % N].update(bit, Px[i]);
 
-      apms[(mixer_duty + i) % N].predict(ctx[i], pp[i], &pp[i]);
+      apms[(mixer_duty + i) % N].predict(ctx[i], Px[i], &P1[i]);
       apms[(mixer_duty + i) % N].update(bit);
     }
     mixer_duty = (mixer_duty + 8) % N;
+
+    for(int i=0;i<8;i++) {
+      pp[i] = (Px[i] + P1[i] * 3) / 4;
+    }
 
     if(first) {
       pp[0] = ProbEven;
@@ -96,7 +102,6 @@ private:
     for(int i=0;i<n;i++) {
       s += pctx[i];
     }
-    printf("%d\n",s);
     return s;
   }
 };
