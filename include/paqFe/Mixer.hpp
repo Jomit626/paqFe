@@ -7,9 +7,9 @@
 
 namespace paqFe::internal {
 
-template<int nfeature>
+template<int nfeature, size_t N = 16>
 class Mixer {
-  Weight W[256][nfeature];
+  Weight W[N][nfeature];
   int32_t X[nfeature] = { ProbEven };
 
   Prob prev_prob = ProbEven;
@@ -18,12 +18,17 @@ public:
 
   Mixer() {
     memset(W, 0x00, sizeof(W));
+    Weight w = (1 << 16) / nfeature;
+    for(int j=0;j<N;j++)
+      for(int i=0;i<nfeature;i++)
+        W[i][j] = w;
 
     for(int i=0;i<nfeature;i++)
       X[i] = LUT.stretch(ProbEven);
   }
 
-  void predict(const Prob* P, const Context ctx, Prob *pp) {
+  void predict(const Prob* P, Context ctx, Prob *pp) {
+    ctx %=  N;
     for(int i=0;i<nfeature;i++)
       X[i] = LUT.stretch(P[i]);
 
@@ -48,12 +53,16 @@ private:
 
     return s;
   }
+  int lr = 512;
 
   void train(Weight *w, int32_t *x, Prob y, uint8_t bit) {
-    int loss = ((bit << 12) - y) * 30;
+    int loss = ((bit << 12) - y) * lr;
 
     for(int i=0;i<nfeature;i++)
       w[i] = w[i] + ((x[i] * loss) >> 16);
+    
+    if(lr > 50)
+      lr--;
   }
 
 };
