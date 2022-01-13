@@ -185,7 +185,7 @@ private:
 
 };
 
-template<int N, typename ... Models>
+template<int N, typename Predictor>
 class CompressEngineNw {
 protected:
   const OpMode m;
@@ -198,7 +198,7 @@ protected:
   Prob prob_next[N] = { ProbEven };
   uint32_t decode_pos[N];
 
-  Predictor<N, Models...> predictor;
+  Predictor predictor;
   Stream<N> stream;
 
 public:

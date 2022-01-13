@@ -11,6 +11,34 @@
 
 namespace paqFe::internal {
 
+template<typename Model, int sel = 0>
+class PassThroughtPredictor {
+  Model m;
+  static_assert(sel >= 0 && sel < Model::OutputCnt);
+
+  bool first = true;
+public:
+  void predict(uint8_t bit, Prob *pp) {
+    Prob ps[Model::OutputCnt];
+    Context c[Model::OutputCnt];
+    m.predict(bit, ps, c);
+
+    *pp = ps[sel];
+  }
+  void predict_byte(uint8_t byte, Prob *pp) {
+    Prob ps[8][Model::OutputCnt];
+    Context ctxs[8][Model::OutputCnt];
+
+    m.predict_byte(byte, &ps[0][0], &ctxs[0][0], Model::OutputCnt);
+    for(int i=0;i<8;i++)
+      pp[i] = ps[i][sel];
+    if(first) {
+      pp[0] = ProbEven;
+      first = false;
+    }
+  }
+};
+
 template<int N, typename ... Models>
 class Predictor {
   static_assert(N >= 8);
@@ -20,7 +48,7 @@ class Predictor {
   Model m;
   Mixer<Model::OutputCnt> mixers[N];
 
-  APM<1024> apms[N];
+  APM<1024 * 24> apms[N];
   APM<4096> apms2[N];
 
   int mixer_duty = 0;

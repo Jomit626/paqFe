@@ -12,9 +12,9 @@ struct Line {
   uint8_t checksum;
 };
 
-template< size_t O2Size = 1ul << 20,
-          size_t O3Size = 1ul << 21,
-          size_t O4Size = 1ul << 22>
+template< size_t O2Size = 1ul << 16,
+          size_t O3Size = 1ul << 19,
+          size_t O4Size = 1ul << 21>
 class Orders {
 protected:
   static constexpr size_t O1Size = 1ul << 12;
@@ -58,6 +58,7 @@ protected:
   uint32_t C2 = 0;
   uint32_t C3 = 0;
   uint32_t C4 = 0;
+  uint32_t C = 0;
 
 public:
   static constexpr int OutputCnt = 4;
@@ -87,7 +88,7 @@ public:
     pp[2] = sm.predict(o3_line->states[binary_idx]);
     pp[3] = sm.predict(o4_line->states[binary_idx]);
     
-    pctx[0] = 1;
+    pctx[0] = C1;
     pctx[1] = o2_hit ? 1 : 0;
     pctx[2] = o3_hit ? 1 : 0;
     pctx[3] = o4_hit ? 1 : 0;
@@ -99,12 +100,15 @@ public:
     uint8_t nibble0 = byte >> 4;
     uint8_t nibble1 = byte & 0xF;
 
-    //predict_nibble(nibble0, o1_line, pp, 1);
+    
     predict_nibble(nibble0, o1_line, true, pp, pctx, stride);
     predict_nibble(nibble0, o2_line, o2_hit, pp + 1, pctx + 1, stride);
     predict_nibble(nibble0, o3_line, o3_hit, pp + 2, pctx + 2, stride);
     predict_nibble(nibble0, o4_line, o4_hit, pp + 3, pctx + 3, stride);
-    updateContextNibble(nibble0);
+    for(int i=0;i<4;i++) {
+      pctx[i*stride] = C1;
+    }
+    updateContextNibble1(nibble0);
     selectLines();
 
     //predict_nibble(nibble1, o1_line, pp + 4, 1);
@@ -112,7 +116,10 @@ public:
     predict_nibble(nibble1, o2_line, o2_hit, pp + 4 * stride + 1, pctx + 4 * stride + 1, stride);
     predict_nibble(nibble1, o3_line, o3_hit, pp + 4 * stride + 2, pctx + 4 * stride + 2, stride);
     predict_nibble(nibble1, o4_line, o4_hit, pp + 4 * stride + 3, pctx + 4 * stride + 3, stride);
-    updateContextNibble(nibble1);
+    for(int i=0;i<4;i++) {
+      pctx[(i + 4)*stride] = C1;
+    }
+    updateContextNibble0(nibble1);
     selectLines();
 
     if(first) {
@@ -144,7 +151,7 @@ protected:
     C0 = (C0 << 1) | bit;
     uint8_t nibble = C0 & 0xF;
     if(counter == 8) {
-      updateContextNibble(nibble);
+      updateContextNibble0(nibble);
 
       C0 = 0;
 
@@ -152,7 +159,7 @@ protected:
       binary_idx = 0;
       return true;
     } else if(counter == 4){
-      updateContextNibble(nibble);
+      updateContextNibble1(nibble);
 
       binary_idx = 0;
       return true;
@@ -161,11 +168,21 @@ protected:
     return false;
   }
 
-  bool updateContextNibble(uint8_t nibble) {
-    C1 = ((C1 << 4) | nibble) & 0xFFF;
-    C2 = ((C2 << 4) | nibble) & 0xFFFF;
-    C3 = ((C3 << 4) | nibble) & 0xFFFFFF;
-    C4 = ((C4 << 4) | nibble);
+  bool updateContextNibble0(uint8_t nibble) {
+    C = ((C << 4) | nibble);
+    C1 = C & 0xFFF;
+    C2 = (C & 0xFFFF) << 5;
+    C3 = (C << 8) * 3;
+    C4 = C * 5;
+    return true;
+  }
+
+  bool updateContextNibble1(uint8_t nibble) {
+    C = ((C << 4) | nibble);
+    C1 = C1 + nibble + 16;
+    C2 = C2 + nibble + 16;
+    C3 = C3 + nibble + 16;
+    C4 = C4 + nibble + 16;
 
     return true;
   }

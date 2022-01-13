@@ -4,7 +4,11 @@
 namespace paqFe {
 
 class paqFeFile {
-  using Engine = internal::CompressEngineNw<8, internal::Orders<>>;
+public:
+  //using Predictor = internal::PassThroughtPredictor<internal::Orders<>, 1>;
+  using Predictor = internal::Predictor<8, internal::Orders<>>;
+  using Engine = internal::CompressEngineNw<8, Predictor>;
+private:
   Engine *engine = nullptr;
 
 public:
