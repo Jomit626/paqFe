@@ -21,7 +21,7 @@ public:
     Weight w = (1 << 16) / nfeature;
     for(int j=0;j<N;j++)
       for(int i=0;i<nfeature;i++)
-        W[i][j] = w;
+        W[j][i] = w;
 
     for(int i=0;i<nfeature;i++)
       X[i] = LUT.stretch(ProbEven);

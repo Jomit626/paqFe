@@ -88,7 +88,7 @@ public:
     Prob Px[8];
     Prob P1[8];
     Context Ctxs[8][Model::OutputCnt];
-    Context ctx[Model::OutputCnt];
+    Context ctx[8];
 
     m.predict_byte(byte, &Ps[0][0], &Ctxs[0][0]);
 
