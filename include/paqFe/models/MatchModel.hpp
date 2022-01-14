@@ -26,10 +26,10 @@ class MatchModel {
   uint8_t history[HistorySize];
 
   CRC<CRCWidth> crc;
-  StateMap<1 << 16> sm[8];
   
-  static constexpr int orders[] = {1, 2, 4, 6};
+  static constexpr int orders[] = {2, 4};
   static constexpr int ordreN = sizeof(orders) / sizeof(*orders) ;
+  StateMap<1 << 16> sm[8];
   
   static constexpr int crc_buf_size = 5;
   uint32_t crc_buf[crc_buf_size] = {0xFFFFFFFF};
@@ -38,6 +38,7 @@ class MatchModel {
     int valid = 0;
     uint32_t len;
     uint32_t byte;
+    uint32_t idx;
 
     bool operator<(const Match& other) {
       return (~valid && other.valid) || (len < other.len);
@@ -72,22 +73,19 @@ public:
     byte = (byte << 1) | bit;
     counter ++;
 
+    update_match(bit, prev_expect_bit);
+
     if(counter == 8) {
       prev_byte = byte;
       counter = 0;
-      use_match = 0; 
       
-      predict_byte(byte);
-    } else if(matches[use_match].valid && prev_expect_bit != bit) {
-      // bit error
-      matches[use_match].valid = 0;
-      use_match = (use_match + 1) < ordreN ? (use_match + 1) : use_match;
+      find_match_byte(byte);
     }
 
-    uint32_t ctx = 0;
+    uint32_t ctx = (prev_byte << 8);
     if(matches[use_match].valid) {
       uint8_t expect_bit = (matches[use_match].byte >> (7 - counter)) & 0x1;
-      ctx = (prev_byte << 8) | (matches[use_match].len << 1) | expect_bit;
+      ctx += (matches[use_match].len << 1) | expect_bit;
 
       prev_expect_bit = expect_bit;
     }
@@ -100,38 +98,39 @@ public:
     assert(counter == 0);
 
     for(int i=0;i<8;i++) {
-      uint32_t ctx = 0;
+      uint32_t ctx = (prev_byte << 8);
       uint8_t bit = (byte >> (7 - i)) & 0x1;
 
       if(matches[use_match].valid) {
         uint8_t expect_bit = (matches[use_match].byte >> (7 - i)) & 0x1;
 
-        ctx = (prev_byte << 8) | (matches[use_match].len << 1) | expect_bit;
-
-        if(expect_bit != bit) {
-          // bit error
-          matches[use_match].valid = 0;
-          use_match = (use_match + 1) < ordreN ? (use_match + 1) : use_match;
-        }
+        ctx += (matches[use_match].len << 1) | expect_bit;
+        update_match(bit, expect_bit);
       }
 
       pctx[i * stride] = ctx;
       sm[i].predict(ctx, &pp[i * stride]);
       sm[i].update(bit);
     }
-    predict_byte(byte);
-    use_match = 0;
+    find_match_byte(byte);
     prev_byte = byte;
   };
 
 private:
+  void update_match(uint8_t bit, uint8_t expect_bit) {
+    if(matches[use_match].valid && expect_bit != bit) {
+      matches[use_match].valid = 0;
+      use_match = (use_match + 1) < ordreN ? (use_match + 1) : use_match;
+    }
+  }
 
   void calcute_hash(uint8_t byte) {
     uint32_t crc_pre = 0xFFFFFFFF;
     for(int i=0;i<crc_buf_size;i++) {
       uint32_t old_crc = crc_buf[i];
 
-      crc_buf[i] = crc.next(crc_pre, byte);
+      //crc_buf[i] = crc.next(crc_pre, byte);
+      crc_buf[i] = crc_pre*24 + byte;
       crc_pre = old_crc;
     }
   }
@@ -159,7 +158,7 @@ private:
     return l;
   }
 
-  void predict_byte(uint8_t byte) {
+  void find_match_byte(uint8_t byte) {
     // recore byte
     history[hidx] = byte;
     uint32_t idx = hidx;
@@ -167,6 +166,21 @@ private:
     
     calcute_hash(byte);
 
+    if(matches[use_match].valid) {
+      Match &m = matches[use_match];
+      m.idx = (m.idx + 1) & HistoryMask;
+      m.byte = history[m.idx];
+      m.len++;
+
+      for(int i=use_match+1;i<ordreN;i++) {
+        matches[i].valid = 0;
+      }
+
+      return;
+    }
+    
+
+    use_match = 0;
     for(int i=0;i<ordreN;i++) {
       int order = orders[i];
       uint32_t hashval = get_crc(order);
@@ -182,6 +196,7 @@ private:
             match_len = 65530;
           matches[i].valid = 1;
           matches[i].byte = history[val];
+          matches[i].idx = val;
           matches[i].len = match_len;
         }
       }
