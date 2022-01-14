@@ -61,7 +61,7 @@ private:
     for(int i=0;i<nfeature;i++)
       w[i] = w[i] + ((x[i] * loss) >> 16);
     
-    if(lr > 50)
+    if(lr > 80)
       lr--;
   }
 

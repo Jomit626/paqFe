@@ -2,6 +2,7 @@
 
 #include <paqFe/types.hpp>
 #include <paqFe/Predictor.hpp>
+#include <paqFe/paqFe.hpp>
 
 using namespace paqFe::internal;
 using namespace paqFe;
@@ -85,8 +86,8 @@ protected:
 
 
 int main() {
-  Predictor<8, PattenedModel,PattenedModel2> m_ref;
-  Predictor<8, PattenedModel,PattenedModel2> m;
+  paqFeFile::Predictor m_ref;
+  paqFeFile::Predictor m;
 
   Prob* pp = new Prob[n * 8];
   Prob* pp_test = new Prob[n * 8];

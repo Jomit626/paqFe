@@ -5,8 +5,10 @@ namespace paqFe {
 
 class paqFeFile {
 public:
-  //using Predictor = internal::PassThroughtPredictor<internal::Orders<>, 1>;
-  using Predictor = internal::Predictor<8, internal::Orders<>>;
+  using Predictor = internal::Predictor<8, internal::MatchModel<4096, 4096, 16>>;
+  //using Predictor = internal::Predictor<8, internal::Orders<>,
+  //                                         internal::MatchModel<1 << 16, 1 << 23, 32>>;
+  //using Predictor = internal::Predictor<8, internal::Orders<>>;
   using Engine = internal::CompressEngineNw<8, Predictor>;
 private:
   Engine *engine = nullptr;

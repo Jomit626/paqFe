@@ -84,16 +84,18 @@ public:
     }
   };
 
-  Prob predict(uint8_t bit, uint32_t state) {
+  void predict(uint32_t state, Prob *pp) {
+    state_prev = state & SizeMask;
+    *pp = infos[state_prev].prob >> 10;
+  }
+
+  void update(uint8_t bit) {
     StateInfo &info = infos[state_prev];
     info.prob += (((int32_t)bit << 22) - info.prob) * 2 / (2 * info.count + 3);
 
     if(info.count < 1023) {
       info.count = info.count + 1;
     }
-
-    state_prev = state & SizeMask;
-    return infos[state_prev].prob >> 10;
   }
 
   /*
