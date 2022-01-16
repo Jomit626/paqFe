@@ -28,11 +28,12 @@ class MatchModel {
   CRC<CRCWidth> crc;
   
   static constexpr int orders[] = {2, 4};
-  static constexpr int ordreN = sizeof(orders) / sizeof(*orders) ;
+  static constexpr int orderN = sizeof(orders) / sizeof(*orders) ;
   StateMap<1 << 16> sm[8];
   
   static constexpr int crc_buf_size = 5;
   uint32_t crc_buf[crc_buf_size] = {0xFFFFFFFF};
+  uint32_t hashes[orderN] = {0};
 
   struct Match {
     int valid = 0;
@@ -44,7 +45,7 @@ class MatchModel {
       return (~valid && other.valid) || (len < other.len);
     }
 
-  } matches[ordreN];
+  } matches[orderN];
 
 
   // output status
@@ -62,10 +63,6 @@ public:
     memset(hashtable, 0x00, sizeof(hashtable));
     memset(matches, 0x00, sizeof(matches));
   }
-
-  void init() {
-    
-  };
 
   void predict(uint8_t bit, Prob *pp, Context *pctx) {
     sm[counter].update(bit);
@@ -120,7 +117,7 @@ private:
   void update_match(uint8_t bit, uint8_t expect_bit) {
     if(matches[use_match].valid && expect_bit != bit) {
       matches[use_match].valid = 0;
-      use_match = (use_match + 1) < ordreN ? (use_match + 1) : use_match;
+      use_match = (use_match + 1) < orderN ? (use_match + 1) : use_match;
     }
   }
 
@@ -129,14 +126,13 @@ private:
     for(int i=0;i<crc_buf_size;i++) {
       uint32_t old_crc = crc_buf[i];
 
-      //crc_buf[i] = crc.next(crc_pre, byte);
-      crc_buf[i] = crc_pre*24 + byte;
+      crc_buf[i] = crc.next(crc_pre, byte);
       crc_pre = old_crc;
     }
   }
 
-  uint32_t get_crc(int i) {
-    return crc_buf[i];
+  uint32_t get_hash(int i) {
+    return crc_buf[orders[i]];
   }
 
   uint32_t hashtable_replace(uint32_t hashval, uint32_t val) {
@@ -170,20 +166,27 @@ private:
       Match &m = matches[use_match];
       m.idx = (m.idx + 1) & HistoryMask;
       m.byte = history[m.idx];
-      m.len++;
+      m.len = max(m.len, 1023);
 
-      for(int i=use_match+1;i<ordreN;i++) {
+      for(int i=use_match+1;i<orderN;i++) {
         matches[i].valid = 0;
       }
 
+
+      // record hash
+      for(int i=0;i<orderN;i++) {
+        uint32_t hashval = get_hash(i);
+
+        // hashtable store pos of expect byte
+        uint32_t val = hashtable_replace(hashval, hidx);
+      }
       return;
     }
     
 
     use_match = 0;
-    for(int i=0;i<ordreN;i++) {
-      int order = orders[i];
-      uint32_t hashval = get_crc(order);
+    for(int i=0;i<orderN;i++) {
+      uint32_t hashval = get_hash(i);
 
       // hashtable store pos of expect byte
       uint32_t val = hashtable_replace(hashval, hidx);
@@ -202,7 +205,7 @@ private:
       }
     }
 
-    sort(&matches[0], &matches[ordreN - 1]);
+    sort(&matches[0], &matches[orderN - 1]);
   }
 
 };
