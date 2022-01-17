@@ -61,7 +61,8 @@ protected:
   uint32_t C = 0;
 
 public:
-  static constexpr int OutputCnt = 4;
+  static constexpr int nProb = 4;
+  static constexpr int nCtx = 1;
 
   Orders() {
     std::memset(o1_lines, 0X00, sizeof(o1_lines));
@@ -88,37 +89,37 @@ public:
     pp[2] = sm.predict(o3_line->states[binary_idx]);
     pp[3] = sm.predict(o4_line->states[binary_idx]);
     
-    pctx[0] = C1;
-    pctx[1] = o2_hit ? 1 : 0;
-    pctx[2] = o3_hit ? 1 : 0;
-    pctx[3] = o4_hit ? 1 : 0;
+    *pctx = get_context();
   }
 
-  void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t stride = OutputCnt) {
+  void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t pstride, size_t ctxstride) {
     assert(("", counter == 0));
     
     uint8_t nibble0 = byte >> 4;
     uint8_t nibble1 = byte & 0xF;
 
     
-    predict_nibble(nibble0, o1_line, true, pp, pctx, stride);
-    predict_nibble(nibble0, o2_line, o2_hit, pp + 1, pctx + 1, stride);
-    predict_nibble(nibble0, o3_line, o3_hit, pp + 2, pctx + 2, stride);
-    predict_nibble(nibble0, o4_line, o4_hit, pp + 3, pctx + 3, stride);
-    for(int i=0;i<4;i++) {
-      pctx[i*stride] = C1;
-    }
+    predict_nibble(nibble0, o1_line, pp, pstride);
+    predict_nibble(nibble0, o2_line, pp + 1, pstride);
+    predict_nibble(nibble0, o3_line, pp + 2, pstride);
+    predict_nibble(nibble0, o4_line, pp + 3, pstride);
+
+    Context ctx = get_context();
+    for(int i=0;i<4;i++)
+      pctx[i*ctxstride] = ctx;
+
     updateContextNibble1(nibble0);
     selectLines();
 
-    //predict_nibble(nibble1, o1_line, pp + 4, 1);
-    predict_nibble(nibble1, o1_line, true, pp + 4 * stride,     pctx + 4 * stride, stride);
-    predict_nibble(nibble1, o2_line, o2_hit, pp + 4 * stride + 1, pctx + 4 * stride + 1, stride);
-    predict_nibble(nibble1, o3_line, o3_hit, pp + 4 * stride + 2, pctx + 4 * stride + 2, stride);
-    predict_nibble(nibble1, o4_line, o4_hit, pp + 4 * stride + 3, pctx + 4 * stride + 3, stride);
-    for(int i=0;i<4;i++) {
-      pctx[(i + 4)*stride] = C1;
-    }
+    predict_nibble(nibble1, o1_line, pp + 4 * pstride, pstride);
+    predict_nibble(nibble1, o2_line, pp + 4 * pstride + 1, pstride);
+    predict_nibble(nibble1, o3_line, pp + 4 * pstride + 2, pstride);
+    predict_nibble(nibble1, o4_line, pp + 4 * pstride + 3, pstride);
+    
+    ctx = get_context();
+    for(int i=4;i<8;i++)
+      pctx[i*ctxstride] = ctx;
+
     updateContextNibble0(nibble1);
     selectLines();
 
@@ -128,14 +129,11 @@ public:
       pp[2] = ProbEven;
       pp[3] = ProbEven;
       pctx[0] = 0;
-      pctx[1] = 0;
-      pctx[2] = 0;
-      pctx[3] = 0;
       first = false;
     }
   }
 
-  void predict_byte_batch(uint8_t *data, size_t size, Prob* pp, Context *pctx, size_t stride = OutputCnt) {
+  void predict_byte_batch(uint8_t *data, size_t size, Prob* pp, Context *pctx, size_t pstride, size_t ctxstride) {
     assert(0);
   }
 
@@ -213,7 +211,7 @@ protected:
     return l;
   }
 
-  void predict_nibble(uint8_t nibble, Line *l, bool hit, Prob* pp, Context *pctx, size_t stride = OutputCnt) {
+  void predict_nibble(uint8_t nibble, Line *l, Prob* pp, size_t stride) {
     int idx0 = 1 + (nibble >> 3);
     int idx1 = 3 + (nibble >> 2);
     int idx2 = 7 + (nibble >> 1);
@@ -221,20 +219,20 @@ protected:
     State* states = l->states;
 
     pp[0] = sm[states[0]];
-    pctx[0] = hit ? 1 : 0;
     states[0].next((nibble >> 3) & 0x1);
 
     pp[1 * stride] = sm[states[idx0]];
-    pctx[1 * stride] = hit ? 1 : 0;
     states[idx0].next((nibble >> 2) & 0x1);
 
     pp[2 * stride] = sm[states[idx1]];
-    pctx[2 * stride] = hit ? 1 : 0;
     states[idx1].next((nibble >> 1) & 0x1);
 
     pp[3 * stride] = sm[states[idx2]];
-    pctx[3 * stride] = hit ? 1 : 0;
     states[idx2].next((nibble >> 0) & 0x1);
+  }
+
+  Context get_context() {
+    return (C << 2) | (o2_hit + o3_hit + o4_hit);
   }
 };
 

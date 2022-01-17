@@ -7,9 +7,10 @@ namespace paqFe::internal {
 class Model {
 public:
 
-  // how many outputs for one bit
-  static constexpr int OutputCnt = 0;
-
+  // how many output Probs for one bit
+  static constexpr int nProb = 0;
+  // how many context
+  static constexpr int nCtx = 0;
   // init
   Model() {};
 
@@ -37,10 +38,10 @@ public:
    * ...
    * !!!
   */
-  void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t stride = OutputCnt) {};
+  void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t pstride, size_t ctxstride) {};
 
   // batch mode for batter cache locality
-  void predict_byte_batch(uint8_t *data, size_t size, Prob* pp, Context *pctx, size_t stride = OutputCnt) {};
+  void predict_byte_batch(uint8_t *data, size_t size, Prob* pp, Context *pctx, size_t pstride, size_t ctxstride) {};
 };
 
 }

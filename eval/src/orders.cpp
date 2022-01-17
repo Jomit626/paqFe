@@ -14,7 +14,7 @@ void eval(FILE* fin, FILE* fout) {
 
   uint8_t buf[128];
   Prob p[8 * model.OutputCnt];
-  Context ctx[8 * model.OutputCnt];
+  Context ctx[8 * model.nCtx];
   size_t n = fread(buf, 1, sizeof(buf), fin);
   while(n > 0) {
 

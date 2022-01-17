@@ -7,7 +7,7 @@ namespace paqFe::internal {
 template<int p = ProbEven>
 class PresudoModel {
 public:
-  static constexpr int OutputCnt = 1;
+  static constexpr int nProb = 1;
 
   void init();
 

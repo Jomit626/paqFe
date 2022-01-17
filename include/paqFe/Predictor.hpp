@@ -14,22 +14,22 @@ namespace paqFe::internal {
 template<typename Model, int sel = 0>
 class PassThroughtPredictor {
   Model m;
-  static_assert(sel >= 0 && sel < Model::OutputCnt);
+  static_assert(sel >= 0 && sel < Model::nProb);
 
   bool first = true;
 public:
   void predict(uint8_t bit, Prob *pp) {
-    Prob ps[Model::OutputCnt];
-    Context c[Model::OutputCnt];
+    Prob ps[Model::nProb];
+    Context c[Model::nCtx];
     m.predict(bit, ps, c);
 
     *pp = ps[sel];
   }
   void predict_byte(uint8_t byte, Prob *pp) {
-    Prob ps[8][Model::OutputCnt];
-    Context ctxs[8][Model::OutputCnt];
+    Prob ps[8][Model::nProb];
+    Context ctxs[8][Model::nCtx];
 
-    m.predict_byte(byte, &ps[0][0], &ctxs[0][0], Model::OutputCnt);
+    m.predict_byte(byte, &ps[0][0], &ctxs[0][0], Model::nProb, Model::nCtx);
     for(int i=0;i<8;i++)
       pp[i] = ps[i][sel];
     if(first) {
@@ -46,7 +46,7 @@ class Predictor {
   using Model = ModelGroup<Models...>;
 
   Model m;
-  Mixer<Model::OutputCnt> mixers[N];
+  Mixer<Model::nProb> mixers[N];
 
   APM<1024 * 24> apms[N];
   APM<4096> apms2[N];
@@ -71,11 +71,11 @@ public:
 
     mixer_duty = (mixer_duty + 1) % N;
 
-    Prob P[Model::OutputCnt];
-    Context Ctx[Model::OutputCnt];
+    Prob P[Model::nProb];
+    Context Ctx[Model::nCtx];
 
     m.predict(bit, P, Ctx);
-    Context ctx = contextSum(Ctx, Model::OutputCnt);
+    Context ctx = contextSum(Ctx, Model::nCtx);
 
     mixers[mixer_duty].predict(P, ctx, &px);
     apms[mixer_duty].predict(ctx, px, &p1);
@@ -84,10 +84,10 @@ public:
   };
 
   void predict_byte(uint8_t byte, Prob *pp) {
-    Prob Ps[8][Model::OutputCnt];
+    Prob Ps[8][Model::nProb];
     Prob Px[8];
     Prob P1[8];
-    Context Ctxs[8][Model::OutputCnt];
+    Context Ctxs[8][Model::nCtx];
     Context ctx[8];
 
     m.predict_byte(byte, &Ps[0][0], &Ctxs[0][0]);
@@ -95,7 +95,7 @@ public:
     for(int i=0;i<8;i++) {
       uint8_t bit = (byte >> (7 - i)) & 0x1;
 
-      ctx[i] = contextSum(Ctxs[i], Model::OutputCnt);
+      ctx[i] = contextSum(Ctxs[i], Model::nCtx);
     
       mixers[(mixer_duty + i) % N].predict(Ps[i], ctx[i], &Px[i]);
     }

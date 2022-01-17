@@ -56,7 +56,8 @@ class MatchModel {
   int prev_expect_bit;
 public:
 
-  static constexpr int OutputCnt = 1;
+  static constexpr int nProb = 1;
+  static constexpr int nCtx = 0;
 
   MatchModel() {
     memset(history, 0x00, sizeof(history));
@@ -87,11 +88,10 @@ public:
       prev_expect_bit = expect_bit;
     }
 
-    *pctx = ctx;
     sm[counter].predict(ctx, pp);
   };
 
-  void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t stride = OutputCnt) {
+  void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t pstride, size_t ctxstride) {
     assert(counter == 0);
 
     for(int i=0;i<8;i++) {
@@ -105,8 +105,7 @@ public:
         update_match(bit, expect_bit);
       }
 
-      pctx[i * stride] = ctx;
-      sm[i].predict(ctx, &pp[i * stride]);
+      sm[i].predict(ctx, &pp[i * pstride]);
       sm[i].update(bit);
     }
     find_match_byte(byte);
