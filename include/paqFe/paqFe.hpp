@@ -7,6 +7,7 @@ class paqFeFile {
 public:
   //using Predictor = internal::PassThroughtPredictor<internal::MatchModel<4096, 1 << 16, 16>>;
   //using Predictor = internal::PassThroughtPredictor<internal::Orders<>, 3>;
+  //using Predictor = internal::Predictor<8, internal::Orders<>>;
   using Predictor = internal::Predictor<8, internal::Orders<>,
                                            internal::MatchModel<4096, 1 << 16, 16>>;
   //using Predictor = internal::Predictor<8, internal::Orders<>>;

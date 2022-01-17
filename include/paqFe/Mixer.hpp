@@ -7,7 +7,7 @@
 
 namespace paqFe::internal {
 
-template<int nfeature, size_t N = 16>
+template<int nfeature, size_t N = 80>
 class Mixer {
   Weight W[N][nfeature];
   int32_t X[nfeature] = { ProbEven };
@@ -37,11 +37,12 @@ public:
   }
 
   void update(uint8_t bit) {
-    train(W[prev_ctx], X, prev_prob, bit);
+    train(W[prev_ctx], X, prev_prob, bit, 50);
   }
 
   void update(uint8_t bit, Prob p) {
-    train(W[prev_ctx], X, p, bit);
+    prev_prob = p;
+    update(bit);
   }
 
 private:
@@ -53,16 +54,12 @@ private:
 
     return s;
   }
-  int lr = 512;
 
-  void train(Weight *w, int32_t *x, Prob y, uint8_t bit) {
+  void train(Weight *w, int32_t *x, Prob y, uint8_t bit, int lr) {
     int loss = ((bit << 12) - y) * lr;
 
     for(int i=0;i<nfeature;i++)
       w[i] = w[i] + ((x[i] * loss) >> 16);
-    
-    if(lr > 80)
-      lr--;
   }
 
 };

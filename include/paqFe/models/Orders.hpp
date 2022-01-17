@@ -13,8 +13,8 @@ struct Line {
 };
 
 template< size_t O2Size = 1ul << 16,
-          size_t O3Size = 1ul << 19,
-          size_t O4Size = 1ul << 21>
+          size_t O3Size = 1ul << 16,
+          size_t O4Size = 1ul << 16>
 class Orders {
 protected:
   static constexpr size_t O1Size = 1ul << 12;
@@ -168,9 +168,9 @@ protected:
 
   bool updateContextNibble0(uint8_t nibble) {
     C = ((C << 4) | nibble);
-    C1 = C & 0xFFF;
-    C2 = (C & 0xFFFF) << 5;
-    C3 = (C << 8) * 3;
+    C1 = (C & 0xFF) << 4;
+    C2 = (C & 0xFFFF) << 4;
+    C3 = (C << 8);
     C4 = C * 5;
     return true;
   }
@@ -193,7 +193,7 @@ protected:
   }
 
   uint32_t hash(uint32_t val) {
-    return (val * 123431523 + val - 3) ^ (val << 3);
+    return (val - 1) ^ (val << 3);
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {
