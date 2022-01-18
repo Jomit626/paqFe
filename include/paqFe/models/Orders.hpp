@@ -7,8 +7,8 @@
 
 namespace paqFe::internal {
 
-template< size_t O2Size = 1ul << 20,
-          size_t O3Size = 1ul << 20,
+template< size_t O2Size = 1ul << 21,
+          size_t O3Size = 1ul << 22,
           size_t O4Size = 1ul << 22>
 class Orders {
 protected:

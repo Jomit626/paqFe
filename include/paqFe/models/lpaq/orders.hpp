@@ -56,20 +56,32 @@ static const U8 State_table[256][2]={
 {140,252},{  0,  0},{  0,  0},{  0,  0}};  // 252
 #define nex(state,sel) State_table[state][sel]
 
-template<size_t Size>
+template< size_t O2Size = 1ul << 20,
+          size_t O3Size = 1ul << 20,
+          size_t O4Size = 1ul << 21>
 class Orders {
-  static_assert(Size > 0 && ((Size - 1) & Size) == 0);
-  static constexpr size_t SizeMask = Size - 1;
+  static constexpr size_t O1Size = 1ul << 16;
+#define DECARE_SIZE(name) \
+  static constexpr size_t name##SizeMask = name##Size - 1;  \
+  static_assert(isPow2(name##Size)); 
 
-  uint8_t table[Size];
-  uint8_t t0[0x10000];
+  DECARE_SIZE(O1)
+  DECARE_SIZE(O2)
+  DECARE_SIZE(O3)
+  DECARE_SIZE(O4)
+
+#undef DECARE_SIZE
+
+  uint8_t table0[0x10000];
+  uint8_t table1[O2Size];
+  uint8_t table2[O3Size];
+  uint8_t table3[O4Size];
 
   int c0=1;
   int c4=0;
   uint8_t *cp[6];
   uint32_t h[6] = {0};
   int bcount=0;
-
 
 public:
   static constexpr int nProb = 4;
@@ -78,11 +90,13 @@ public:
   Prob p[nProb];
   Context ctx[nCtx];
   Orders() {
-    memset(table, 0, sizeof(table));
-    memset(t0, 0, sizeof(t0));
+    memset(table0, 0, sizeof(table0));
+    memset(table1, 0, sizeof(table1));
+    memset(table2, 0, sizeof(table2));
+    memset(table3, 0, sizeof(table3));
 
     for(int i=0;i<6;i++)
-      cp[i] = t0;
+      cp[i] = table0;
     for(int i=0;i<nProb;i++)
       p[i] = ProbEven;
     for(int i=0;i<nCtx;i++)
@@ -108,16 +122,16 @@ public:
       if (c0>=65 && c0<=90) c0+=32;  // lowercase unigram word order
       if (c0>=97 && c0<=122) h[5]=(h[5]+c0)*(7<<3);
       else h[5]=0;
-      cp[1]= table_find(h[1]) + 1;
-      cp[2]= table_find(h[2]) + 1;
-      cp[3]= table_find(h[3]) + 1;
+      cp[1]= table_find(table1, O2SizeMask, h[1]) + 1;
+      cp[2]= table_find(table2, O3SizeMask, h[2]) + 1;
+      cp[3]= table_find(table3, O4SizeMask, h[3]) + 1;
       c0=1;
       bcount=0;
     }
     if (bcount==4) {
-      cp[1]= table_find(h[1] + c0) + 1;
-      cp[2]= table_find(h[2] + c0) + 1;
-      cp[3]= table_find(h[3] + c0) + 1;
+      cp[1]= table_find(table1, O2SizeMask, h[1] + c0) + 1;
+      cp[2]= table_find(table2, O3SizeMask, h[2] + c0) + 1;
+      cp[3]= table_find(table3, O4SizeMask, h[3] + c0) + 1;
     }
     else if (bcount>0) {
       int j=y+1<<(bcount&3)-1;
@@ -125,7 +139,7 @@ public:
       cp[2]+=j;
       cp[3]+=j;
     }
-    cp[0]=t0+h[0]+c0;
+    cp[0]=table0+h[0]+c0;
     
     pp[0] = StaticStateMap::map[*cp[0]];
     pp[1] = StaticStateMap::map[*cp[1]];
@@ -152,13 +166,13 @@ public:
   }
   
 private:
-  uint8_t* table_find(uint32_t val) {
+  uint8_t* table_find(uint8_t *table, size_t Mask, uint32_t val) {
     uint32_t hash = val;
     hash*=123456791;
     hash=hash<<16|hash>>16;
     hash*=234567891;
     int chk=val>>24;
-    hash=(hash*16)&SizeMask;
+    hash=(hash*16)&Mask;
     if (table[hash]==chk) return &table[hash];
     //if (t[i^B]==chk) return t+(i^B);
     //if (t[i^B*2]==chk) return t+(i^B*2);
