@@ -37,7 +37,7 @@ public:
   }
 
   void update(uint8_t bit) {
-    train(W[prev_ctx], X, prev_prob, bit, 50);
+    train(W[prev_ctx], X, prev_prob, bit, 55);
   }
 
   void update(uint8_t bit, Prob p) {

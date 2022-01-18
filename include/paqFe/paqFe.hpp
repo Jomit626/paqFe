@@ -9,10 +9,9 @@ public:
   //using Predictor = internal::PassThroughtPredictor<internal::MatchModel<4096, 1 << 16, 16>>;
   //using Predictor = internal::PassThroughtPredictor<internal::Orders<>, 3>;
   //using Predictor = internal::PassThroughtPredictor<internal::lpaq::Orders<1<<23>, 1>;
-  using Predictor = internal::Predictor<8, internal::lpaq::Orders<1<<22>>;
+  //using Predictor = internal::Predictor<8, internal::lpaq::Orders<>>;
   //using Predictor = internal::Predictor<8, internal::Orders<>>;
-  //using Predictor = internal::Predictor<8, internal::Orders<>,
-  //                                         internal::MatchModel<4096, 1 << 16, 16>>;
+  using Predictor = internal::Predictor<8, internal::Orders<>, internal::MatchModel<1 << 16, 1 << 21, 32>>;
   //using Predictor = internal::Predictor<8, internal::Orders<>>;
   using Engine = internal::CompressEngineNw<8, Predictor>;
 private:

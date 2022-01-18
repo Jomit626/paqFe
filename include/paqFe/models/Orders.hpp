@@ -7,9 +7,9 @@
 
 namespace paqFe::internal {
 
-template< size_t O2Size = 1ul << 21,
-          size_t O3Size = 1ul << 22,
-          size_t O4Size = 1ul << 22>
+template< size_t O2Size = 1ul << 20,
+          size_t O3Size = 1ul << 20,
+          size_t O4Size = 1ul << 21>
 class Orders {
 protected:
   struct Line {
@@ -56,8 +56,8 @@ protected:
   uint32_t C1 = 0;     // prev byte
   uint32_t C2 = 0;
   uint32_t C3 = 0;
-  uint32_t C4 = 0;
-  uint32_t C = 0;
+  uint64_t C4 = 0;
+  uint64_t C = 0;
 
 public:
   static constexpr int nProb = 4;
@@ -167,10 +167,10 @@ protected:
 
   bool updateContextNibble0(uint8_t nibble) {
     C = ((C << 4) | nibble);
-    C1 = (C & 0xFF) << 4;
+    C1 = (C & 0xFF) << 5;
     C2 = (C & 0xFFFF) << 4;
     C3 = (C << 8);
-    C4 = C * 5;
+    C4 = C << 5;
     return true;
   }
 
@@ -186,13 +186,22 @@ protected:
 
   void selectLines() {
     o1_line = selLine(o1_lines, C1, C1 & O1Mask, &o1_hit);
-    o2_line = selLine(o2_lines, C2, hash(C2) & O2Mask, &o2_hit);
-    o3_line = selLine(o3_lines, C3, hash(C3) & O3Mask, &o3_hit);
-    o4_line = selLine(o4_lines, C4, hash(C4) & O4Mask, &o4_hit);
+    o2_line = selLine(o2_lines, C2, hash2(C2) & O2Mask, &o2_hit);
+    o3_line = selLine(o3_lines, C3, hash3(C3) & O3Mask, &o3_hit);
+    o4_line = selLine(o4_lines, C4, hash4(C4) & O4Mask, &o4_hit);
   }
 
   uint32_t hash(uint32_t val) {
-    return (val - 1) ^ (val << 3);
+    return (val << 3) ^ (val >> 16);
+  }
+  uint32_t hash2(uint32_t val) {  // 17 bit vaild data, 16 bit hash
+    return val ^ ((val >> 16) * 0x5555);
+  }
+  uint32_t hash3(uint32_t val) {  // 25 bit vaild data, 16 bit hash
+    return (val << 3) ^ ((val >> 16) * 0x0201);
+  }
+  uint32_t hash4(uint64_t val) {  // 37 bit vaild data, 17 bit hash
+    return (val) ^ ((val >> 20) * 0x100001);
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {
