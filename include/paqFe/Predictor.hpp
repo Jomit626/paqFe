@@ -75,7 +75,7 @@ public:
     Context Ctx[Model::nCtx];
 
     m.predict(bit, P, Ctx);
-    Context ctx = contextSum(Ctx, Model::nCtx);
+    Context ctx = Model::nCtx > 0 ? contextSum(Ctx, Model::nCtx) : 0;
 
     mixers[mixer_duty].predict(P, ctx, &px);
     apms[mixer_duty].predict(ctx, px, &p1);
@@ -95,7 +95,7 @@ public:
     for(int i=0;i<8;i++) {
       uint8_t bit = (byte >> (7 - i)) & 0x1;
 
-      ctx[i] = contextSum(Ctxs[i], Model::nCtx);
+      ctx[i] = Model::nCtx > 0 ? contextSum(Ctxs[i], Model::nCtx) : 0;
     
       mixers[(mixer_duty + i) % N].predict(Ps[i], ctx[i], &Px[i]);
     }

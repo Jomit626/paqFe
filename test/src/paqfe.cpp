@@ -40,12 +40,12 @@ int main(int argc, char** argv) {
       "mode: %s\n"
       "input file:%s\n"
       "output file:%s\n"
-      "mem usage:%d MB\n"
+      "mem usage:%.2lf MB\n"
       ,
       mode == OpMode::Compress ? "compress" : "decompress",
       input_pathname == NULL ? "null" : input_pathname,
       output_pathname == NULL ? "null" : output_pathname,
-      sizeof(paqFeFile::Engine) / 1024 / 1024
+      (double)sizeof(paqFeFile::Engine) / 1024 / 1024
     );
 
   if(!input_pathname || !output_pathname)

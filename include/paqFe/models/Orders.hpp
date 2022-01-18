@@ -7,20 +7,22 @@
 
 namespace paqFe::internal {
 
-struct Line {
-  State states[15];
-  uint8_t checksum;
-};
-
-template< size_t O2Size = 1ul << 16,
-          size_t O3Size = 1ul << 16,
-          size_t O4Size = 1ul << 16>
+template< size_t O2Size = 1ul << 20,
+          size_t O3Size = 1ul << 20,
+          size_t O4Size = 1ul << 22>
 class Orders {
 protected:
-  static constexpr size_t O1Size = 1ul << 12;
+  struct Line {
+    State states[15];
+    uint8_t checksum; 
+  };
+
+  static constexpr size_t O1Size = 1ul << 16;
 #define DECARE_SIZE(name) \
-  static constexpr size_t name##SizeMask = name##Size - 1;  \
+  static constexpr size_t name##LineCnt = name##Size / sizeof(Line); \
+  static constexpr size_t name##Mask = name##LineCnt - 1;  \
   static_assert(isPow2(name##Size));  \
+  static_assert(isPow2(sizeof(Line)));
 
   DECARE_SIZE(O1)
   DECARE_SIZE(O2)
@@ -29,14 +31,11 @@ protected:
 
 #undef DECARE_SIZE
 
-  Line o1_lines[O1Size];
-  Line o2_lines[O2Size];
-  Line o3_lines[O3Size];
-  Line o4_lines[O4Size];
+  Line o1_lines[O1LineCnt];
+  Line o2_lines[O2LineCnt];
+  Line o3_lines[O3LineCnt];
+  Line o4_lines[O4LineCnt];
 
-  StaticStateMap sm;
-
-  //
   bool first = true;
 
   // bit indicators in bitwise prediction
@@ -84,10 +83,10 @@ public:
       selectLines();
 
     // do prediction
-    pp[0] = sm.predict(o1_line->states[binary_idx]);
-    pp[1] = sm.predict(o2_line->states[binary_idx]);
-    pp[2] = sm.predict(o3_line->states[binary_idx]);
-    pp[3] = sm.predict(o4_line->states[binary_idx]);
+    pp[0] = StaticStateMap::map[o1_line->states[binary_idx]];
+    pp[1] = StaticStateMap::map[o2_line->states[binary_idx]];
+    pp[2] = StaticStateMap::map[o3_line->states[binary_idx]];
+    pp[3] = StaticStateMap::map[o4_line->states[binary_idx]];
     
     *pctx = get_context();
   }
@@ -186,10 +185,10 @@ protected:
   }
 
   void selectLines() {
-    o1_line = selLine(o1_lines, C1, C1 & O1SizeMask, &o1_hit);
-    o2_line = selLine(o2_lines, C2, hash(C2) & O2SizeMask, &o2_hit);
-    o3_line = selLine(o3_lines, C3, hash(C3) & O3SizeMask, &o3_hit);
-    o4_line = selLine(o4_lines, C4, hash(C4) & O4SizeMask, &o4_hit);
+    o1_line = selLine(o1_lines, C1, C1 & O1Mask, &o1_hit);
+    o2_line = selLine(o2_lines, C2, hash(C2) & O2Mask, &o2_hit);
+    o3_line = selLine(o3_lines, C3, hash(C3) & O3Mask, &o3_hit);
+    o4_line = selLine(o4_lines, C4, hash(C4) & O4Mask, &o4_hit);
   }
 
   uint32_t hash(uint32_t val) {
@@ -218,16 +217,16 @@ protected:
 
     State* states = l->states;
 
-    pp[0] = sm[states[0]];
+    pp[0] = StaticStateMap::map[states[0]];
     states[0].next((nibble >> 3) & 0x1);
 
-    pp[1 * stride] = sm[states[idx0]];
+    pp[1 * stride] = StaticStateMap::map[states[idx0]];
     states[idx0].next((nibble >> 2) & 0x1);
 
-    pp[2 * stride] = sm[states[idx1]];
+    pp[2 * stride] = StaticStateMap::map[states[idx1]];
     states[idx1].next((nibble >> 1) & 0x1);
 
-    pp[3 * stride] = sm[states[idx2]];
+    pp[3 * stride] = StaticStateMap::map[states[idx2]];
     states[idx2].next((nibble >> 0) & 0x1);
   }
 
