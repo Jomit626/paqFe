@@ -113,8 +113,8 @@ public:
 };
 
 class StaticStateMap {
-  const static Prob map[256];
 public:
+  const static Prob map[256];
   Prob predict(uint8_t bit, uint32_t state) {
     assert(state < 256);
     return map[state];
