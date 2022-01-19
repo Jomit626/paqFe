@@ -49,9 +49,8 @@ class Predictor {
   Mixer<Model::nProb> mixers[N];
 
   APM<1024 * 24> apms[N];
-  APM<4096> apms2[N];
 
-  int mixer_duty = 0;
+  int duty = 0;
 
   bool first = true;
 
@@ -66,10 +65,10 @@ public:
       apms[0].predict(0, ProbEven, &px);
       first = false;
     }
-    mixers[mixer_duty].update(bit);
-    apms[mixer_duty].update(bit);
+    mixers[duty].update(bit);
+    apms[duty].update(bit);
 
-    mixer_duty = (mixer_duty + 1) % N;
+    duty = (duty + 1) % N;
 
     Prob P[Model::nProb];
     Context Ctx[Model::nCtx];
@@ -77,9 +76,8 @@ public:
     m.predict(bit, P, Ctx);
     Context ctx = Model::nCtx > 0 ? contextSum(Ctx, Model::nCtx) : 0;
 
-    mixers[mixer_duty].predict(P, ctx, &px);
-    apms[mixer_duty].predict(ctx, px, &p1);
-
+    mixers[duty].predict(P, ctx, &px);
+    apms[duty].predict(ctx, px, &p1);
     *pp = (px + p1 * 3) / 4;
   };
 
@@ -97,7 +95,7 @@ public:
 
       ctx[i] = Model::nCtx > 0 ? contextSum(Ctxs[i], Model::nCtx) : 0;
     
-      mixers[(mixer_duty + i) % N].predict(Ps[i], ctx[i], &Px[i]);
+      mixers[(duty + i) % N].predict(Ps[i], ctx[i], &Px[i]);
     }
 
     if(first) {
@@ -107,16 +105,13 @@ public:
 
     for(int i=0;i<8;i++) {
       uint8_t bit = (byte >> (7 - i)) & 0x1;
-      mixers[(mixer_duty + i) % N].update(bit, Px[i]);
+      mixers[(duty + i) % N].update(bit, Px[i]);
 
-      apms[(mixer_duty + i) % N].predict(ctx[i], Px[i], &P1[i]);
-      apms[(mixer_duty + i) % N].update(bit);
-    }
-    mixer_duty = (mixer_duty + 8) % N;
-
-    for(int i=0;i<8;i++) {
+      apms[(duty + i) % N].predict(ctx[i], Px[i], &P1[i]);
+      apms[(duty + i) % N].update(bit);
       pp[i] = (Px[i] + P1[i] * 3) / 4;
     }
+    duty = (duty + 8) % N;
 
     if(first) {
       pp[0] = ProbEven;
