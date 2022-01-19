@@ -16,7 +16,7 @@ namespace internal {
 
 typedef int32_t Weight;
 typedef uint32_t Prob;
-typedef uint8_t Context;
+typedef uint32_t Context;
 
 constexpr Prob ProbEven = 2048;
 constexpr Prob ProbFirst = 2048;

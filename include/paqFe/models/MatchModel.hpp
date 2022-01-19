@@ -57,7 +57,8 @@ class MatchModel {
 public:
 
   static constexpr int nProb = 1;
-  static constexpr int nCtx = 0;
+  static constexpr int nCtx = 1;
+  static constexpr int CtxShift = 10;
 
   MatchModel() {
     memset(history, 0x00, sizeof(history));
@@ -85,9 +86,11 @@ public:
       uint8_t expect_bit = (matches[use_match].byte >> (7 - counter)) & 0x1;
       ctx += (matches[use_match].len << 1) | expect_bit;
 
+      *pctx = max(matches[use_match].len,128);
       prev_expect_bit = expect_bit;
+    } else {
+      *pctx = 0;
     }
-
     sm[counter].predict(ctx, pp);
   };
 
@@ -102,9 +105,11 @@ public:
         uint8_t expect_bit = (matches[use_match].byte >> (7 - i)) & 0x1;
 
         ctx += (matches[use_match].len << 1) | expect_bit;
+        pctx[i * ctxstride] = max(matches[use_match].len,128);
         update_match(bit, expect_bit);
+      } else {
+        pctx[i * ctxstride] = 0;
       }
-
       sm[i].predict(ctx, &pp[i * pstride]);
       sm[i].update(bit);
     }

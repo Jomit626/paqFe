@@ -51,14 +51,9 @@ class Predictor {
   APM<1024 * 24> apms[N];
 
   int duty = 0;
-
   bool first = true;
 
 public:
-  Predictor() {
-
-  }
-
   void predict(uint8_t bit, Prob *pp) {
     Prob px, p1;
     if(first) {
@@ -74,7 +69,7 @@ public:
     Context Ctx[Model::nCtx];
 
     m.predict(bit, P, Ctx);
-    Context ctx = Model::nCtx > 0 ? contextSum(Ctx, Model::nCtx) : 0;
+    Context ctx = m.ContextMix(&Ctx[0]) & 0xFF;
 
     mixers[duty].predict(P, ctx, &px);
     apms[duty].predict(ctx, px, &p1);
@@ -93,7 +88,7 @@ public:
     for(int i=0;i<8;i++) {
       uint8_t bit = (byte >> (7 - i)) & 0x1;
 
-      ctx[i] = Model::nCtx > 0 ? contextSum(Ctxs[i], Model::nCtx) : 0;
+      ctx[i] = m.ContextMix(&Ctxs[i][0]) & 0xFF;
     
       mixers[(duty + i) % N].predict(Ps[i], ctx[i], &Px[i]);
     }
@@ -118,15 +113,6 @@ public:
       first = false;
     }
   };
-
-private:
-  Context contextSum(const Context *pctx, int n) {
-    Context s = 0;
-    for(int i=0;i<n;i++) {
-      s += pctx[i];
-    }
-    return s;
-  }
 };
 
 }

@@ -8,27 +8,26 @@ template<typename ... Models>
 class ModelGroup : Models... {
 private:
 
-  template<typename M, typename ... Rest>
-  static constexpr int getNProb() {
-    if constexpr (sizeof...(Rest)) {
-      return getNProb<Rest...>() + M::nProb;
-    } else {
-      return M::nProb;
-    }
+#define AttributeSumDeclare(Attribute)  \
+  template<typename M, typename ... Rest> \
+  static constexpr int Attribute##Sum() { \
+    if constexpr (sizeof...(Rest)) {  \
+      return Attribute##Sum<Rest...>() + M::Attribute; \
+    } else {  \
+      return M::Attribute;  \
+    } \
   }
 
-  template<typename M, typename ... Rest>
-  static constexpr int getNCtx() {
-    if constexpr (sizeof...(Rest)) {
-      return getNCtx<Rest...>() + M::nCtx;
-    } else {
-      return M::nCtx;
-    }
-  }
+  AttributeSumDeclare(nProb)
+  AttributeSumDeclare(nCtx)
+  AttributeSumDeclare(CtxShift)
 
+#undef AttributeSumDeclare
 public:
-  static constexpr int nProb = getNProb<Models...>();
-  static constexpr int nCtx = getNCtx<Models...>();
+
+  static constexpr int nProb = nProbSum<Models...>();
+  static constexpr int nCtx = nCtxSum<Models...>();
+  static constexpr int CtxShift = CtxShiftSum<Models...>();
 
   void predict(uint8_t bit, Prob *pp, Context* pctx) {
     predict<Models...>(bit, pp, pctx);
@@ -36,6 +35,10 @@ public:
 
   void predict_byte(uint8_t byte, Prob *pp, Context* pctx) {
     predict_byte<Models...>(byte, pp, pctx);
+  }
+
+  Context ContextMix(const Context *pctx) {
+    return ContextMix<Models...>(pctx);
   }
 
 private:
@@ -55,6 +58,23 @@ private:
 
     if constexpr (sizeof...(Rest)) {
       predict_byte<Rest...>(byte, pp + M::nProb, pctx + M::nCtx);
+    }
+  }
+
+  template<typename M, typename ... Rest>
+  Context ContextMix(const Context *pctx) {
+    if constexpr (sizeof...(Rest)) {
+      if constexpr (M::nCtx) {
+        return *pctx ^ (ContextMix<Rest...>(pctx + 1) << M::CtxShift);
+      } else {
+        return ContextMix<Rest...>(pctx);
+      }
+    } else {
+      if constexpr (M::nCtx) {
+        return *pctx;
+      } else {
+        return 0;
+      }
     }
   }
 

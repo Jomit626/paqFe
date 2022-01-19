@@ -11,6 +11,8 @@ public:
   static constexpr int nProb = 0;
   // how many context
   static constexpr int nCtx = 0;
+  static constexpr int CtxShift = 2;
+  
   // init
   Model() {};
 

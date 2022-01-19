@@ -62,6 +62,7 @@ protected:
 public:
   static constexpr int nProb = 4;
   static constexpr int nCtx = 1;
+  static constexpr int CtxShift = 2;
 
   Orders() {
     std::memset(o1_lines, 0X00, sizeof(o1_lines));
@@ -240,7 +241,7 @@ protected:
   }
 
   Context get_context() {
-    return (C << 2) | (o2_hit + o3_hit + o4_hit);
+    return (o2_hit + o3_hit + o4_hit);
   }
 };
 

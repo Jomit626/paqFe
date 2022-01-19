@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     delete fout;
   } else {
     paqFeFile *fin = new paqFeFile(input_pathname, OpMode::Decompress);
-    printf("origin size:%d\n", fin->size());
+    printf("origin size:%ld\n", fin->size());
     FILE* fout = fopen(output_pathname, "wb");
     uint8_t buf[1024];
 
