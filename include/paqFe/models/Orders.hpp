@@ -168,9 +168,9 @@ protected:
   bool updateContextNibble0(uint8_t nibble) {
     C = ((C << 4) | nibble);
     C1 = (C & 0xFF) << 5;
-    C2 = (C & 0xFFFF) << 4;
-    C3 = (C << 8);
-    C4 = C << 5;
+    C2 = (C & 0xFFFF) << 5 | 0x57000000;
+    C3 = (C << 8) * 3;
+    C4 = C * 5;
     return true;
   }
 
@@ -195,13 +195,13 @@ protected:
     return (val << 3) ^ (val >> 16);
   }
   uint32_t hash2(uint32_t val) {  // 17 bit vaild data, 16 bit hash
-    return val ^ ((val >> 16) * 0x5555);
+    return val ^ ((val >> 16) * 123456789);
   }
   uint32_t hash3(uint32_t val) {  // 25 bit vaild data, 16 bit hash
-    return (val << 3) ^ ((val >> 16) * 0x0201);
+    return (val << 3) ^ ((val >> 16) * 123456789);
   }
   uint32_t hash4(uint64_t val) {  // 37 bit vaild data, 17 bit hash
-    return (val) ^ ((val >> 20) * 0x100001);
+    return (val) ^ ((val >> 20) * 123456789);
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {
