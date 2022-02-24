@@ -12,20 +12,14 @@ struct TableEntry
   uint64_t cnt;
 };
 
-
-uint32_t hash2(uint32_t val) {  // 17 bit vaild data, 16 bit hash
-  return val ^ ((val >> 16) * 123456789);
-}
-
-template<int N, int M, size_t Size>
-void evalPE(const HashFunc<N,M> &h, const std::vector<uint64_t> &t, TableEntry* tab, Scores &s) {
-  memset(tab, sizeof(TableEntry), Size);
+template<int N, int M, size_t Size, typename Hash>
+void evalPE(const Hash &h, const std::vector<uint64_t> &t, TableEntry* tab, Scores &s) {
+  memset(tab, 0, sizeof(TableEntry) * Size);
   s.init();
 
   size_t n = t.size();
   for(int i=0;i<n;i++) {
     uint64_t val = t[i];
-    //uint32_t hashval = hash2(val) & h.mask;
     uint32_t hashval = h(val);
 
     TableEntry &e = tab[hashval];
@@ -35,7 +29,7 @@ void evalPE(const HashFunc<N,M> &h, const std::vector<uint64_t> &t, TableEntry* 
       e.cnt ++;
       
     } else {
-      s.record_confilict();
+      s.record_confilict(e.cnt);
 
       e.val = val;
       e.cnt = 1;
@@ -45,8 +39,8 @@ void evalPE(const HashFunc<N,M> &h, const std::vector<uint64_t> &t, TableEntry* 
   s.concrate(n);
 }
 
-template<int N, int M, size_t Size>
-void eval(const HashFunc<N,M> &h, const std::vector<uint64_t> &t, Scores &s) {
+template<int N, int M, size_t Size, typename Hash>
+void eval(const Hash &h, const std::vector<uint64_t> &t, Scores &s) {
   TableEntry* tab = new TableEntry[Size];
 
   evalPE<N, M, Size>(h, t, tab, s);

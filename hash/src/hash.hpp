@@ -5,58 +5,62 @@
 
 // hash N bits data to M bits
 template<int N, int M>
-class HashFunc {
+class TabHashing {
   static_assert(N > 0 && N <= 64);
   static_assert(M > 0 && M <= 32);
+public:
+  static constexpr int nByte = (N + 7) / 8;
 
-  uint32_t X[N];
+  uint32_t X[nByte][256];
 public:
   static constexpr uint32_t mask = (1 << M) - 1;
-  uint32_t getX(int i) const {
-    return X[i];
+
+  uint32_t getX(int i, int j) const {
+    return X[i][j];
   }
 
-  void setX(int i, uint32_t x) {
-    X[i] = x & mask;
+  void setX(int i, int j, uint32_t x) {
+    X[i][j] = x & mask;
   }
 
-  void setXUnsafe(int i, uint32_t x) {
-    X[i] = x;
+  void setXUnsafe(int i, int j, uint32_t x) {
+    X[i][j] = x;
   }
 
   uint32_t operator() (uint64_t val) const {
     uint32_t hashval = 0;
-    for(int i=0;i<N;i++) {
-      if(val & (1 << i))
-        hashval ^= X[i];
+    for(int i=0;i<nByte;i++) {
+      hashval ^= X[i][(val >> 8*i) & 0xFF];
     }
     return hashval & mask;
   }
 
-  bool operator==(const HashFunc<N,M> &other) const {
-    for(int i=0;i<N;i++) {
-      if(X[i] != other.X[i])
+  bool operator==(const TabHashing<N,M> &other) const {
+    for(int i=0;i<nByte;i++) {
+      for(int j=0;j<256;j++) {
+      if(X[i][j] != other.X[i][j])
         return false;
+      }
     }
     return true;
   }
 
-  void dump(FILE *f) {
-    fprintf(f, "X[] = {\n");
-    for(int i=0;i<N;i++) {
-      if(i != N - 1)
-        fprintf(f, "%x,\n", X[i]);
-      else 
-        fprintf(f, "%x}\n", X[i]);
-    }
-  }
+  void dump(FILE* f, const char* name) {
+    fprintf(f, "uint32_t %s[%d][256] = {\n", name, nByte);
+    for(int i=0;i<nByte;i++) {
+      fprintf(f, "{");
+      for(int j=0;j<256;j++) {
+        fprintf(f, "0X%08X,", X[i][j]);
+        if(j % 8 == 7) {
+          if(j == 255)
+            fprintf(f, "},\n");
+          else
+            fprintf(f, "\n");
+        }
+      }
 
-  bool is_good() {  // are all bits used
-    uint32_t x = X[0];
-    for(int i=1;i<N;i++) {
-      x |= X[i];
     }
-
-    return x == mask;
+    fprintf(f, "};\n");
   }
 };
+
