@@ -9,6 +9,7 @@ namespace paqFe::internal {
 
 template<int nfeature, size_t N = 80>
 class Mixer {
+protected:
   Weight W[N][nfeature];
   int32_t X[nfeature] = { ProbEven };
 

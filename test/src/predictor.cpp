@@ -52,7 +52,7 @@ public:
   void predict(uint8_t bit, Prob *pp, Context *pctx) {
     update(1);
     pp[0] = counter;
-    pctx[0] = counter & 1;
+    pctx[0] = counter & 3;
 
     pp[1] = 4096 - counter;;
     pctx[1] = counter & 255;
@@ -61,7 +61,7 @@ public:
   void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t stride = OutputCnt) {
     for(int i=0;i<8;i++) {
       pp[i * stride] = counter;
-      pctx[i * stride] = counter & 1;
+      pctx[i * stride] = counter & 3;
       pp[i * stride + 1] = 4096 - counter;
       pctx[i * stride + 1] = counter & 255;
       update(1);
@@ -90,22 +90,25 @@ int main() {
   paqFeFile::Predictor m;
 
   Prob* pp = new Prob[n * 8];
+  Context *pctx = new Context[n * 8];
   Prob* pp_test = new Prob[n * 8];
+  Context *pctx_test = new Context[n * 8];
 
   pp[0] = 2048;
+  pctx[0] = 0;
   for(int i=0;i<n;i++) {
     uint8_t byte = i;
     for(int j=7;j>=0;j--) {
       uint8_t bit = (byte >> j) & 0x1;
 
-      m_ref.predict(bit, &pp[i*8 + 7 - j + 1]);
+      m_ref.predict(bit, &pp[i*8 + 7 - j + 1], &pctx[i*8 + 7 - j + 1]);
     }
   }
 
 
   for(int i=0;i<n;i++) {
     uint8_t byte = i;
-    m.predict_byte(byte, &pp_test[8*i]);
+    m.predict_byte(byte, &pp_test[8*i], &pctx_test[8*i]);
   }
 
   for(int i=0;i<n*8 - 1;i++) {

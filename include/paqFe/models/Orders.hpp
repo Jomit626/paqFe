@@ -1,9 +1,17 @@
 #pragma once
 
 #include <cstring>
+#include <cmath>
 
 #include "../types.hpp"
 #include "StateMap.hpp"
+
+#include "TabHash.hpp"
+#include "TabHash.h"
+
+constexpr size_t log2(size_t x) {
+  return (size_t)std::log2l(x);
+}
 
 namespace paqFe::internal {
 
@@ -169,9 +177,9 @@ protected:
   bool updateContextNibble0(uint8_t nibble) {
     C = ((C << 4) | nibble);
     C1 = (C & 0xFF) << 5;
-    C2 = (C & 0xFFFF) << 5 | 0x57000000;
-    C3 = (C << 8) * 3;
-    C4 = C * 5;
+    C2 = (C & 0xFFFF) << 5;
+    C3 = (C & 0xFFFFFF) << 5;
+    C4 = (C & 0xFFFFFFFF) << 5;
     return true;
   }
 
@@ -187,22 +195,9 @@ protected:
 
   void selectLines() {
     o1_line = selLine(o1_lines, C1, C1 & O1Mask, &o1_hit);
-    o2_line = selLine(o2_lines, C2, hash2(C2) & O2Mask, &o2_hit);
-    o3_line = selLine(o3_lines, C3, hash3(C3) & O3Mask, &o3_hit);
-    o4_line = selLine(o4_lines, C4, hash4(C4) & O4Mask, &o4_hit);
-  }
-
-  uint32_t hash(uint32_t val) {
-    return (val << 3) ^ (val >> 16);
-  }
-  uint32_t hash2(uint32_t val) {  // 17 bit vaild data, 16 bit hash
-    return val ^ ((val >> 16) * 123456789);
-  }
-  uint32_t hash3(uint32_t val) {  // 25 bit vaild data, 16 bit hash
-    return (val << 3) ^ ((val >> 16) * 123456789);
-  }
-  uint32_t hash4(uint64_t val) {  // 37 bit vaild data, 17 bit hash
-    return (val) ^ ((val >> 20) * 123456789);
+    o2_line = selLine(o2_lines, C2, tab_hashing<21, 16>(O2HashTab, C2) & O2Mask, &o2_hit);
+    o3_line = selLine(o3_lines, C3, tab_hashing<29, 16>(O3HashTab, C3) & O3Mask, &o3_hit);
+    o4_line = selLine(o4_lines, C4, tab_hashing<34, 17>(O4HashTab, C4) & O4Mask, &o4_hit);
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {

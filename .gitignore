@@ -9,6 +9,7 @@
 !test
 !verify
 !eval
+!hash
 
 test/data
 verify/data
