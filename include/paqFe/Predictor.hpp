@@ -39,14 +39,12 @@ public:
   }
 };
 
-template<int N, typename ... Models>
+template<int N, typename Model, typename Mixer>
 class Predictor {
   static_assert(N >= 8);
 
-  using Model = ModelGroup<Models...>;
-
   Model m;
-  Mixer<Model::nProb> mixers[N];
+  Mixer mixers[N];
 
   APM<1024 * 24> apms[N];
 

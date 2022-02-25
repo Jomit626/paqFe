@@ -1,18 +1,19 @@
 #include "types.hpp"
 #include "Engine.hpp"
 #include "models/lpaq/orders.hpp"
+#include "models/Group.hpp"
+#include "Mixer.hpp"
 
 namespace paqFe {
 
 class paqFeFile {
 public:
-  //using Predictor = internal::PassThroughtPredictor<internal::MatchModel<4096, 1 << 16, 16>>;
-  //using Predictor = internal::PassThroughtPredictor<internal::Orders<>, 3>;
-  //using Predictor = internal::PassThroughtPredictor<internal::lpaq::Orders<1<<23>, 1>;
-  //using Predictor = internal::Predictor<8, internal::lpaq::Orders<>>;
-  //using Predictor = internal::Predictor<8, internal::Orders<>>;
-  using Predictor = internal::Predictor<8, internal::Orders<>, internal::MatchModel<1 << 16, 1 << 21, 32>>;
-  //using Predictor = internal::Predictor<8, internal::Orders<>>;
+  using Model = internal::ModelGroup<
+                            internal::Orders<>,
+                            internal::MatchModel<1 << 16, 1 << 21, 32>
+                          >;
+  using Mixer = internal::Mixer<Model::nProb>;
+  using Predictor = internal::Predictor<8, Model, Mixer>;
   using Engine = internal::CompressEngineNw<8, Predictor>;
 private:
   Engine *engine = nullptr;

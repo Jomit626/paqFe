@@ -18,6 +18,7 @@ endfunction(add_verify_db name)
 
 add_verify_db(order1)
 add_verify_db(coder)
+add_verify_db(mixer)
 
 add_custom_target(
   all-db-gen
