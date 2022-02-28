@@ -4,27 +4,31 @@ add_custom_target(verify-db)
 
 function(add_verify_db DB_NAME)
 
-  add_executable(${DB_NAME}-db verify/src/main.cpp verify/src/${DB_NAME}.cpp)
-  target_link_libraries(${DB_NAME}-db PUBLIC paqFe)
+  add_executable(vdb-${DB_NAME} verify/src/main.cpp verify/src/${DB_NAME}.cpp)
+  target_link_libraries(vdb-${DB_NAME} PUBLIC paqFe)
 
   add_custom_target(
-    ${DB_NAME}-db-gen
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/verify/genDB.sh ${DB_NAME} ${CMAKE_BINARY_DIR}/${DB_NAME}-db
-    DEPENDS ${DB_NAME}-db
+    vdb-${DB_NAME}-exec
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/verify/genDB.sh ${DB_NAME} ${CMAKE_BINARY_DIR}/vdb-${DB_NAME}
+    DEPENDS vdb-${DB_NAME}
   )
-  add_dependencies(verify-db ${DB_NAME}-db-gen)
+  add_dependencies(verify-db vdb-${DB_NAME}-exec)
 
 endfunction(add_verify_db name)
 
 add_verify_db(order1)
 add_verify_db(coder)
 add_verify_db(mixer)
+add_verify_db(mixer-predict)
+add_verify_db(mixer-loss)
+add_verify_db(mixer-update)
+add_verify_db(orders_ctx)
 
 add_custom_target(
-  all-db-gen
+  vdb-all-exec
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/verify/genDB.sh all ${CMAKE_BINARY_DIR}/paqfe
   DEPENDS paqfe
 )
-add_dependencies(verify-db all-db-gen)
+add_dependencies(verify-db vdb-all-exec)
 
 endif()

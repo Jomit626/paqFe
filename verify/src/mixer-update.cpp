@@ -13,36 +13,38 @@ int mixer_id = 0;
 template<int nfeature, size_t N = 80>
 class MixerWrapped : Mixer<nfeature, N> {
   using Parent = Mixer<nfeature, N>;
-  int id = -1;
-  Prob Ps[nfeature];
-public:
 
+public:
   MixerWrapped() : Parent() {
-    id = mixer_id++;
   }
 
   void predict(const Prob* P, Context ctx, Prob *pp) {
-    for(int i=0;i<nfeature;i++)
-      Ps[i] = P[i];
     Parent::predict(P, ctx, pp);
   }
 
   void update(uint8_t bit) {
+    pre_output();
     Parent::update(bit);
     output(bit);
   }
 
   void update(uint8_t bit, Prob p) {
+    pre_output();
     Parent::update(bit, p);
     output(bit);
   }
 
 private:
-  void output(uint8_t bit) {
-    fprintf(gfout, "%d,", id);
+  void pre_output() {
     for(int i=0;i<nfeature;i++)
-      fprintf(gfout, "%d,", Ps[i]);
-    fprintf(gfout, "%d,%d,%d,%d\n", Parent::prev_ctx, bit, Parent::prev_prob, dot(Xs, Ws[ctx], nfeature) >> 16);
+      fprintf(gfout, "%d,", Parent::X[i]);
+    for(int i=0;i<nfeature;i++)
+      fprintf(gfout, "%d,", Parent::W[Parent::prev_ctx][i]);
+  }
+  void output(uint8_t bit) {
+    for(int i=0;i<nfeature;i++)
+      fprintf(gfout, "%d,", Parent::W[Parent::prev_ctx][i]);
+    fprintf(gfout, "%d\n", Parent::loss(Parent::prev_prob, bit, Parent::lr));
   }
 };
 

@@ -12,6 +12,7 @@ class Mixer {
 protected:
   Weight W[N][nfeature];
   int32_t X[nfeature] = { ProbEven };
+  int32_t lr = 10;
 
   Prob prev_prob = ProbEven;
   Context prev_ctx = 0;
@@ -38,7 +39,7 @@ public:
   }
 
   void update(uint8_t bit) {
-    train(W[prev_ctx], X, prev_prob, bit, 55);
+    train(W[prev_ctx], X, prev_prob, bit, lr);
   }
 
   void update(uint8_t bit, Prob p) {
@@ -46,7 +47,7 @@ public:
     update(bit);
   }
 
-private:
+protected:
   int32_t dot(int32_t* a, int32_t* b, int n) {
     int32_t s = 0;
     for(int i=0;i<n;i++) {
@@ -56,11 +57,15 @@ private:
     return s;
   }
 
+  int32_t loss(Prob y, uint8_t bit, int lr) {
+    return ((bit << 12) - y) * lr;
+  }
+
   void train(Weight *w, int32_t *x, Prob y, uint8_t bit, int lr) {
-    int loss = ((bit << 12) - y) * lr;
+    int l = loss(y, bit, lr);
 
     for(int i=0;i<nfeature;i++)
-      w[i] = w[i] + ((x[i] * loss) >> 16);
+      w[i] = w[i] + ((x[i] * l) >> 16);
   }
 
 };
