@@ -14,6 +14,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   add_test_target_i(orders)
   add_test_target_i(state)
   add_test_target_i(predictor)
+  add_test_target_i(contextmap)
 
   add_test(NAME UsageCheck COMMAND usage)
   add_test(NAME Order1Check COMMAND orders)

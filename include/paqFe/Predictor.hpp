@@ -5,6 +5,7 @@
 #include "models/PresudoModel.hpp"
 #include "models/MatchModel.hpp"
 #include "models/StateModel.hpp"
+#include "models/ContextMap.hpp"
 #include "models/Group.hpp"
 
 #include <type_traits>
@@ -41,7 +42,7 @@ public:
 
 template<int N, typename Model, typename Mixer>
 class Predictor {
-  static_assert(N >= 8);
+  static_assert(N >= 8 || N == 1);
 
   Model m;
   Mixer mixers[N];
