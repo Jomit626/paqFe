@@ -9,7 +9,7 @@ do
   esac
 done
 
-PROJ_FOLDER="$(dirname "$0")/.."
+PROJ_FOLDER="$(realpath $(dirname "$0")/..)"
 PQAFE="$PROJ_FOLDER/build/paqfe"
 
 DATA_FOLDER="$PROJ_FOLDER/test/data"
