@@ -7,6 +7,7 @@
 #include "../types.hpp"
 #include "CRC.hpp"
 #include "StateMap.hpp"
+#include "ContextMap.hpp"
 
 namespace paqFe::internal {
 
@@ -47,6 +48,11 @@ class MatchModel {
 
   } matches[orderN];
 
+  static size_t MulHash(uint64_t val) {
+    return (val * 	10000000807) ^ ((val >> 32) * 123456);
+  }
+
+  ContextMap<MulHash, 16> cm1;
 
   // output status
   uint8_t byte = 0;
@@ -56,8 +62,8 @@ class MatchModel {
   int prev_expect_bit;
 public:
 
-  static constexpr int nProb = 1;
-  static constexpr int nCtx = 1;
+  static constexpr int nProb = decltype(cm1)::nProb;
+  static constexpr int nCtx = decltype(cm1)::nCtx;
   static constexpr int CtxShift = 10;
 
   MatchModel() {
@@ -67,7 +73,7 @@ public:
   }
 
   void predict(uint8_t bit, Prob *pp, Context *pctx) {
-    sm[counter].update(bit);
+    //sm[counter].update(bit);
 
     byte = (byte << 1) | bit;
     counter ++;
@@ -82,16 +88,17 @@ public:
     }
 
     uint32_t ctx = (prev_byte << 8);
+    ctx += matches[use_match].len;
     if(matches[use_match].valid) {
       uint8_t expect_bit = (matches[use_match].byte >> (7 - counter)) & 0x1;
-      ctx += (matches[use_match].len << 1) | expect_bit;
 
-      *pctx = max(matches[use_match].len,128);
+      //*pctx = max(matches[use_match].len,128);
       prev_expect_bit = expect_bit;
     } else {
-      *pctx = 0;
+      //*pctx = 0;
     }
-    sm[counter].predict(ctx, pp);
+    cm1.predict(bit, ctx, pp, pctx);
+    //sm[counter].predict(ctx, pp);
   };
 
   void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t pstride, size_t ctxstride) {
@@ -99,19 +106,18 @@ public:
 
     for(int i=0;i<8;i++) {
       uint32_t ctx = (prev_byte << 8);
+      ctx += matches[use_match].len;
       uint8_t bit = (byte >> (7 - i)) & 0x1;
 
       if(matches[use_match].valid) {
         uint8_t expect_bit = (matches[use_match].byte >> (7 - i)) & 0x1;
 
-        ctx += (matches[use_match].len << 1) | expect_bit;
-        pctx[i * ctxstride] = max(matches[use_match].len,128);
+        //pctx[i * ctxstride] = max(matches[use_match].len,128);
         update_match(bit, expect_bit);
       } else {
-        pctx[i * ctxstride] = 0;
+        //pctx[i * ctxstride] = 0;
       }
-      sm[i].predict(ctx, &pp[i * pstride]);
-      sm[i].update(bit);
+      cm1.predict(bit, ctx, &pp[i * pstride], &pctx[i * ctxstride]);
     }
     find_match_byte(byte);
     prev_byte = byte;

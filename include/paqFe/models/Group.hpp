@@ -63,6 +63,12 @@ private:
 
   template<typename M, typename ... Rest>
   Context ContextMix(const Context *pctx) {
+    Context c = 0;
+    for(int i=0;i<nCtx;i++) {
+      c = (c << 1) + pctx[i];
+    }
+    return c;
+    /*
     if constexpr (sizeof...(Rest)) {
       if constexpr (M::nCtx) {
         return *pctx ^ (ContextMix<Rest...>(pctx + 1) << M::CtxShift);
@@ -76,6 +82,7 @@ private:
         return 0;
       }
     }
+    */
   }
 
 };

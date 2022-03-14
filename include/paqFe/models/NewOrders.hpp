@@ -44,13 +44,13 @@ protected:
     return (val * 	10000000807) ^ ((val >> 32) * 123456);
   }
 
-  ContextMap<MulHash, 12> cm1;
-  ContextMap<MulHash, 21> cm2;
-  ContextMap<MulHash, 21> cm3;
-  ContextMap<MulHash, 21> cm4;
+  ContextMap<MulHash, 20> cm1;
+  ContextMap<MulHash, 20> cm2;
+  ContextMap<MulHash, 17> cm3;
+  ContextMap<MulHash, 18> cm4;
 public:
-  static constexpr int nProb = 4 * 5;
-  static constexpr int nCtx = 1;
+  static constexpr int nProb = decltype(cm1)::nProb * 1;
+  static constexpr int nCtx = decltype(cm1)::nCtx * 1;
   static constexpr int CtxShift = 2;
 
   NewOrders() {
@@ -58,24 +58,27 @@ public:
   }
 
   void predict(uint8_t bit, Prob *pp, Context *pctx) {
-    cm1.predict(bit, C1, pp);
-    cm2.predict(bit, C2, pp + 1 * 5);
-    cm3.predict(bit, C3, pp + 2 * 5);
-    cm4.predict(bit, C4, pp + 3 * 5);
+    cm1.predict(bit, C, pp, pctx);
+    //cm2.predict(bit, C2, pp + decltype(cm1)::nProb * 1, pctx + decltype(cm1)::nCtx * 1);
+    //cm3.predict(bit, C3, pp + decltype(cm1)::nProb * 2, pctx + decltype(cm1)::nCtx * 2);
+    //cm4.predict(bit, C4, pp + decltype(cm1)::nProb * 3, pctx + decltype(cm1)::nCtx * 3);
+    updateContext(bit);
 
-    *pctx = 0;
+    //*pctx = 0;
   }
 
   void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t pstride, size_t ctxstride) {
     assert(("", counter == 0));
 
-    cm1.predict_byte(byte, C1, pp, pstride);
-    cm2.predict_byte(byte, C2, pp + 1 * 5, pstride);
-    cm3.predict_byte(byte, C3, pp + 2 * 5, pstride);
-    cm4.predict_byte(byte, C4, pp + 3 * 5, pstride);
+    cm1.predict_byte(byte, C, pp, pctx, pstride, ctxstride);
+    //cm2.predict_byte(byte, C2, pp + decltype(cm1)::nProb * 1, pctx + decltype(cm1)::nCtx * 1, pstride, ctxstride);
+    //cm3.predict_byte(byte, C3, pp + decltype(cm1)::nProb * 2, pctx + decltype(cm1)::nCtx * 2, pstride, ctxstride);
+    //cm4.predict_byte(byte, C4, pp + decltype(cm1)::nProb * 3, pctx + decltype(cm1)::nCtx * 3, pstride, ctxstride);
 
-    for(int i=0;i<8;i++)
-      pctx[i*ctxstride] = 0;
+    //for(int i=0;i<8;i++)
+      //pctx[i*ctxstride] = 0;
+    updateContextByte(byte);
+
   }
 
   void predict_byte_batch(uint8_t *data, size_t size, Prob* pp, Context *pctx, size_t pstride, size_t ctxstride) {
@@ -87,36 +90,23 @@ protected:
     counter++;
 
     C0 = (C0 << 1) | bit;
-    uint8_t nibble = C0 & 0xF;
     if(counter == 8) {
-      updateContextNibble0(nibble);
+      updateContextByte(C0);
 
       C0 = 0;
 
       counter = 0;
       return true;
-    } else if(counter == 4){
-      updateContextNibble1(nibble);
-
-      return true;
     }
 
     return false;
   }
-
-  bool updateContextNibble0(uint8_t nibble) {
-    C = ((C << 4) | nibble);
+  void updateContextByte(uint8_t byte) {
+    C = ((C << 8) | byte);
     C1 = (C & 0xFF);
     C2 = (C & 0xFFFF);
     C3 = (C & 0xFFFFFF);
     C4 = (C & 0xFFFFFFFF);
-    return true;
-  }
-
-  bool updateContextNibble1(uint8_t nibble) {
-    C = ((C << 4) | nibble);
-
-    return true;
   }
 
   Context get_context() {

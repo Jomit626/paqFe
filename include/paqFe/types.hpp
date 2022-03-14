@@ -33,5 +33,9 @@ static constexpr int max(int a, int b) {
     return b;
 }
 
+uint8_t BitSel(uint8_t x, int i) {
+  return (x >> (7 - i)) & 0x1;
+}
+
 }
 }

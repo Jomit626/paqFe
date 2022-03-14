@@ -3,12 +3,14 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   
   function(add_test_target_i TEST_NAME)
 
-  add_executable(${TEST_NAME} test/src/${TEST_NAME}.cpp)
-  target_link_libraries(${TEST_NAME} PUBLIC paqFe)
+  add_executable(test-${TEST_NAME} test/src/${TEST_NAME}.cpp)
+  target_link_libraries(test-${TEST_NAME} PUBLIC paqFe)
 
   endfunction(add_test_target_i TEST_NAME)
 
-  add_test_target_i(paqfe)
+  add_executable(paqfe test/src/paqfe.cpp)
+  target_link_libraries(paqfe PUBLIC paqFe)
+
   add_test_target_i(statemap)
   add_test_target_i(usage)
   add_test_target_i(orders)

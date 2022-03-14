@@ -2,7 +2,8 @@
 #include "Engine.hpp"
 #include "models/lpaq/orders.hpp"
 #include "models/Group.hpp"
-#include "models/NewOrders.hpp"
+#include "models/SimpleBytePredict.hpp"
+#include "models/NormalModel.hpp"
 #include "Mixer.hpp"
 
 namespace paqFe {
@@ -10,13 +11,11 @@ namespace paqFe {
 class paqFeFile {
 public:
   using Model = internal::ModelGroup<
-                            internal::NewOrders<>,
-                            internal::Orders<>,
-                            internal::MatchModel<1 << 16, 1 << 21, 32>
+                          internal::ModelSimpleBytePredict<internal::NormalModel<>>
                           >;
-  using Mixer = internal::Mixer<Model::nProb>;
+  using Mixer = internal::Mixer<Model::nProb, 1024>;
   using Predictor = internal::Predictor<8, Model, Mixer>;
-  using Engine = internal::CompressEngineNw<1, Predictor>;
+  using Engine = internal::CompressEngineNw<8, Predictor>;
 private:
   Engine *engine = nullptr;
 

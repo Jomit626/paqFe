@@ -13,9 +13,7 @@
 
 namespace paqFe::internal {
 
-uint8_t BitSel(uint8_t x, int i) {
-  return (x >> (7 - i)) & 0x1;
-}
+
 
 typedef size_t(*HashFunc)(uint64_t);
 
@@ -37,7 +35,7 @@ protected:
   //static_assert(sizeof(Line) == 9);
 
   static constexpr size_t N = 1 << AddrBits;
-  AssociativeHashMap<Line, uint8_t, sizeof(Line) * N, 8> hashmap;
+  HashMap<Line, uint8_t, sizeof(Line) * N> hashmap;
   StateMap<1 << 12> sm;
   StateMap<1 << 12> sm2;
   bool first = true;
@@ -49,7 +47,6 @@ protected:
   int binary_idx = 0;
 public:
   static constexpr int nProb = 5;
-  static constexpr int nCtx = 0;
   static constexpr int CtxShift = 0;
 
   State* pState;
@@ -61,7 +58,7 @@ public:
     for(int j=0;j<nProb;j++)
       pnxt[j] = ProbEven;
   }
-  void predict(uint8_t bit, uint64_t ctx, Prob *pp) {
+  void predict(uint8_t bit, uint64_t ctx, Prob *pp, int *cnt) {
     if(first) first = false;
 
     sm.update(bit);
@@ -97,15 +94,17 @@ public:
     pp[2] = LUT.squash((bitIsUncertain - 1) & st); // when both counts are nonzero add(0) otherwise add(st)
     const int p0 = 4095 - p1;
     pp[3] = LUT.squash((((p1 & (-!n0)) - (p0 & (-!n1))) * scale) >> 10);
-    assert(pp[1] > 0 && pp[1] <= 4095);
+
+    if(*pState != 0)
+      *cnt = *cnt + 1;
   }
 
   Prob pnxt[nProb] = {ProbEven};
-  void predict_byte(uint8_t byte, uint64_t ctx, Prob *pp, size_t pstride) {
+  void predict_byte(uint8_t byte, uint64_t ctx, Prob *pp, size_t pstride, int cnt[8]) {
     for(int i=0;i<8;i++) {
       for(int j=0;j<nProb;j++)
         pp[i * pstride + j] = pnxt[j];
-      predict((byte >> (7 - i)) & 0x1, ctx, &pnxt[0]);
+      predict((byte >> (7 - i)) & 0x1, ctx, &pnxt[0], &cnt[i]);
     }
   }
 
