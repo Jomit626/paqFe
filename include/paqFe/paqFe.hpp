@@ -4,6 +4,8 @@
 #include "models/Group.hpp"
 #include "models/SimpleBytePredict.hpp"
 #include "models/NormalModel.hpp"
+#include "models/BiasModel.hpp"
+#include "models/Orders.hpp"
 #include "Mixer.hpp"
 
 namespace paqFe {
@@ -11,7 +13,8 @@ namespace paqFe {
 class paqFeFile {
 public:
   using Model = internal::ModelGroup<
-                          //internal::Orders<>,
+                          internal::BiasModel,
+                          internal::Orders<>,
                           internal::ModelSimpleBytePredict<internal::NormalModel<>>
                           >;
   using Mixer = internal::Mixer<Model::nProb, Model::nCtx>;

@@ -44,14 +44,16 @@ public:
     for(int k=0;k<nHidden;k++) {
       int ctx = pctx[k] & 0xFF;
       prev_ctx[k] = ctx;
-      X1[k] = LUT.stretch(LUT.squash( (dot(X, W[k][ctx], nFeature) * 1) >> 16));
+      int32_t y = dot(X, W[k][ctx], nFeature);
+      y = (y * 1) >> 16;
+      X1[k] = LUT.stretch(LUT.squash(y));
     }
     *pp = prev_prob = LUT.squash( (dot(X1, W1, nHidden) * 1) >> 16 );
   }
 
   void update(uint8_t bit) {
     for(int k=0;k<nHidden;k++) {
-      train(W[k][prev_ctx[k]], X, nFeature, LUT.squash(X1[k]), bit, 13);
+      train(W[k][prev_ctx[k]], X, nFeature, LUT.squash(X1[k]), bit, 7);
     }
     train(W1, X1, nHidden, prev_prob, bit, 3);
   }
@@ -74,8 +76,15 @@ private:
   void train(Weight *w, int32_t *x, size_t len, Prob y, uint8_t bit, int lr) {
     int loss = ((bit << 12) - y) * lr;
 
-    for(int i=0;i<len;i++)
-      w[i] = w[i] + ((x[i] * loss) >> 16);
+    for(int i=0;i<len;i++) {
+      Weight wt = w[i] + ((((x[i] * loss * 2) >> 16U) + 1) >> 1U);
+      if( wt < -32768 ) {
+        wt = -32768;
+      } else if( wt > 32767 ) {
+        wt = 32767;
+      }
+      w[i] = wt;
+    }
   }
 
 };

@@ -13,8 +13,6 @@
 
 namespace paqFe::internal {
 
-
-
 typedef size_t(*HashFunc)(uint64_t);
 union Line {
   struct slot0 {
@@ -28,11 +26,12 @@ union Line {
     State states[7];
   } slot;
 };
-template<typename HashMap, HashFunc H, int AddrBits>
+
+template<HashFunc H, int AddrBits>
 class ContextMap {
 protected:
   static constexpr size_t N = 1 << AddrBits;
-  HashMap &hashmap;
+  AssociativeHashMap<Line, uint8_t, sizeof(Line) * N, 16> hashmap;
   StateMap<1 << 12> sm;
   StateMap<1 << 12> sm2;
   bool first = true;
@@ -43,11 +42,11 @@ protected:
   State *active_line;
   int binary_idx = 0;
 public:
-  static constexpr int nProb = 5;
+  static constexpr int nProb = 6;
   static constexpr int CtxShift = 0;
 
   State* pState;
-  ContextMap(HashMap &m) : hashmap(m) {
+  ContextMap() {
     hashmap.find(0, 0, &l0);
     active_line = &l0->slot0.states[0];
     pState = &l0->slot0.states[0];
@@ -59,41 +58,45 @@ public:
     if(first) first = false;
 
     sm.update(bit);
+    sm2.update(bit);
     pState->next(bit);
 
     updateContext(bit, ctx);
 
     int bpos = counter;
     const uint32_t smask = (uint32_t(0x31031010) >> (bpos << 2)) & 0x0F;
+    const int bp = (0xFEA4U >> (bpos << 1U)) & 3U; // {0}->0  {1}->1  {2,3,4}->2  {5,6,7}->3
     int pis = smask + (C0 & smask);
     pState = &active_line[pis];
-    if(((l0->slot0.c1 >> (8 - bpos)) + 0x100) == C0) {
+    if(((l0->slot0.c1 + 0x100) >> (8 - bpos)) == C0) {
       const int predictedBit = BitSel(l0->slot0.c1, bpos);
-      if(predictedBit) {
-        pp[4] = 4090;
-      } else {
-        pp[4] = 100;
-      }
+      const int byte1IsUncertain = static_cast<const int>(l0->slot0.c1 != l0->slot0.c2);
+      const int runCount = l0->slot0.cnt;
+      int c = runCount << 4U | bp << 2U | byte1IsUncertain << 1 | predictedBit;
+      sm2.predict(c, &pp[5]);
     } else{
-      pp[4] = 2048;
+      sm2.predict(0, &pp[5]);
     }
-
+  
     Prob p1;
-    int scale = 64;
     sm.predict(*pState, &p1);
-    const int st = (LUT.stretch(p1) * scale) >> 8;
-    const int contextIsYoung = int(*pState <= 2);
-    int n0 = pState->zero_cnt();
-    int n1 = pState->one_cnt();
-    int bitIsUncertain = n0 != 0 && n1 != 0;
-    pp[0] = LUT.squash(st >> contextIsYoung);
-    pp[1] = LUT.squash(((p1 - 2048) * scale) >> 9);
-    pp[2] = LUT.squash((bitIsUncertain - 1) & st); // when both counts are nonzero add(0) otherwise add(st)
-    const int p0 = 4095 - p1;
-    pp[3] = LUT.squash((((p1 & (-!n0)) - (p0 & (-!n1))) * scale) >> 10);
-
-    if(*pState != 0)
+    if(*pState != 0) {
+      int scale = 64;
+      const int st = (LUT.stretch(p1) * scale) >> 8;
+      const int contextIsYoung = int(*pState <= 2);
+      int n0 = pState->zero_cnt();
+      int n1 = pState->one_cnt();
+      int bitIsUncertain = n0 != 0 && n1 != 0;
+      pp[0] = LUT.squash(st >> contextIsYoung);
+      pp[1] = LUT.squash(((p1 - 2048) * scale) >> 9);
+      pp[2] = LUT.squash((bitIsUncertain - 1) & st); // when both counts are nonzero add(0) otherwise add(st)
+      const int p0 = 4095 - p1;
+      pp[3] = LUT.squash((((p1 & (-!n0)) - (p0 & (-!n1))) * scale) >> 10);
       *cnt = *cnt + 1;
+    } else {
+      pp[0] = pp[1] = pp[2] = pp[3] = pp[5];
+    }
+    pp[4] = p1;
   }
 
   Prob pnxt[nProb] = {ProbEven};
@@ -124,12 +127,12 @@ protected:
     C0 = (C0 << 1) | bit;
     uint8_t tag = ctx ^ (ctx >> 8);
     if(counter == 8) {
+      l0->slot0.c2 = l0->slot0.c1;
       if(l0->slot0.c1 == int8_t(C0)) {
-        l0->slot0.cnt = 1;
-      } else {
-        l0->slot0.c2 = l0->slot0.c1;
-        l0->slot0.c1 = C0;
         l0->slot0.cnt++;
+      } else {
+        l0->slot0.c1 = C0;
+        l0->slot0.cnt = 1;
       }
 
       updateContextBit8(tag, ctx + C0);
