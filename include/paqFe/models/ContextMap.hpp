@@ -16,26 +16,23 @@ namespace paqFe::internal {
 
 
 typedef size_t(*HashFunc)(uint64_t);
-
-template<HashFunc H, int AddrBits>
+union Line {
+  struct slot0 {
+    State states[3];
+    uint8_t c1;
+    uint8_t c2;
+    uint8_t c3;
+    uint8_t cnt;
+  } slot0;
+  struct slot {
+    State states[7];
+  } slot;
+};
+template<typename HashMap, HashFunc H, int AddrBits>
 class ContextMap {
 protected:
-  union Line {
-    struct slot0 {
-      State states[3];
-      uint8_t c1;
-      uint8_t c2;
-      uint8_t c3;
-      uint8_t cnt;
-    } slot0;
-    struct slot {
-      State states[7];
-    } slot;
-  };
-  //static_assert(sizeof(Line) == 9);
-
   static constexpr size_t N = 1 << AddrBits;
-  AssociativeHashMap<Line, uint8_t, sizeof(Line) * N, 16> hashmap;
+  HashMap &hashmap;
   StateMap<1 << 12> sm;
   StateMap<1 << 12> sm2;
   bool first = true;
@@ -50,7 +47,7 @@ public:
   static constexpr int CtxShift = 0;
 
   State* pState;
-  ContextMap() {
+  ContextMap(HashMap &m) : hashmap(m) {
     hashmap.find(0, 0, &l0);
     active_line = &l0->slot0.states[0];
     pState = &l0->slot0.states[0];

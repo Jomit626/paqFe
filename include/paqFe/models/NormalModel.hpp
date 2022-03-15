@@ -30,22 +30,33 @@ protected:
   uint32_t C0 = 0; // current byte
   uint64_t C = 0;
   uint64_t ctx[15];
-
-  ContextMap<MulHash, C1AddrBits> cm1;
-  ContextMap<MulHash, C2AddrBits> cm2;
-  ContextMap<MulHash, C3AddrBits> cm3;
-  ContextMap<MulHash, C4AddrBits> cm4;
-  ContextMap<MulHash, C5AddrBits> cm5;
-  ContextMap<MulHash, C6AddrBits> cm6;
-  ContextMap<MulHash, C7AddrBits> cm7;
-  ContextMap<MulHash, C9AddrBits> cm9;
-  ContextMap<MulHash, C12AddrBits> cm14;
+  static constexpr size_t N = 1 << 24;
+  typedef AssociativeHashMap<Line, uint8_t, sizeof(Line) * N, 16> HashMap;
+  HashMap hashmap;
+  ContextMap<HashMap, MulHash, C1AddrBits> cm1;
+  ContextMap<HashMap, MulHash, C2AddrBits> cm2;
+  ContextMap<HashMap, MulHash, C3AddrBits> cm3;
+  ContextMap<HashMap, MulHash, C4AddrBits> cm4;
+  ContextMap<HashMap, MulHash, C5AddrBits> cm5;
+  ContextMap<HashMap, MulHash, C6AddrBits> cm6;
+  ContextMap<HashMap, MulHash, C7AddrBits> cm7;
+  ContextMap<HashMap, MulHash, C9AddrBits> cm9;
+  ContextMap<HashMap, MulHash, C12AddrBits> cm14;
 
 public:
   static constexpr int nProb = decltype(cm1)::nProb * 9;
   static constexpr int nCtx = 7;
 
-  NormalModel() {
+  NormalModel() :
+    cm1(hashmap), 
+    cm2(hashmap), 
+    cm3(hashmap), 
+    cm4(hashmap), 
+    cm5(hashmap), 
+    cm6(hashmap), 
+    cm7(hashmap), 
+    cm9(hashmap), 
+    cm14(hashmap) {
     for(int i=0;i++;i<15) {
       ctx[i] = 0;
     }
