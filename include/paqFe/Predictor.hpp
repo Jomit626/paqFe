@@ -70,7 +70,7 @@ public:
     m.predict(bit, P, Ctx);
     Context ctx = m.ContextMix(&Ctx[0]) & 0xFF;
 
-    mixers[duty].predict(P, ctx, &px);
+    mixers[duty].predict(P, Ctx, &px);
     apms[duty].predict(ctx, px, &p1);
     *pp = (px + p1 * 3) / 4;
   };
@@ -88,8 +88,7 @@ public:
       uint8_t bit = (byte >> (7 - i)) & 0x1;
 
       ctx[i] = m.ContextMix(&Ctxs[i][0]) & 0xFF;
-    
-      mixers[(duty + i) % N].predict(Ps[i], ctx[i], &Px[i]);
+      mixers[(duty + i) % N].predict(Ps[i], Ctxs[i], &Px[i]);
     }
 
     if(first) {

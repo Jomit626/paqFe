@@ -35,7 +35,7 @@ protected:
   //static_assert(sizeof(Line) == 9);
 
   static constexpr size_t N = 1 << AddrBits;
-  HashMap<Line, uint8_t, sizeof(Line) * N> hashmap;
+  AssociativeHashMap<Line, uint8_t, sizeof(Line) * N, 16> hashmap;
   StateMap<1 << 12> sm;
   StateMap<1 << 12> sm2;
   bool first = true;

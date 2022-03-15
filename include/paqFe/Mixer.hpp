@@ -7,38 +7,53 @@
 
 namespace paqFe::internal {
 
-template<int nfeature, size_t N = 80>
+template<int nFeature, int nHidden>
 class Mixer {
 protected:
-  Weight W[N][nfeature];
-  int32_t X[nfeature] = { ProbEven };
+  Weight W[nHidden][256][nFeature];
+  int32_t X[nFeature];
+
+  Weight W1[nHidden];
+  int32_t X1[nHidden];
 
   Prob prev_prob = ProbEven;
-  Context prev_ctx = 0;
+  Context prev_ctx[nHidden];
 public:
 
   Mixer() {
     memset(W, 0x00, sizeof(W));
-    Weight w = (1 << 16) / nfeature;
-    for(int j=0;j<N;j++)
-      for(int i=0;i<nfeature;i++)
-        W[j][i] = w;
+    Weight w = (1 << 16) / nFeature;
+    Weight w1 = (1 << 16) / nHidden;
+    for(int k=0;k<nHidden;k++) {
+      W1[k] = w;
+      prev_ctx[k] = 0;
+      X1[k] = 0;
+      for(int j=0;j<256;j++)
+        for(int i=0;i<nFeature;i++)
+          W[k][j][i] = w;
+    }
 
-    for(int i=0;i<nfeature;i++)
+    for(int i=0;i<nFeature;i++)
       X[i] = LUT.stretch(ProbEven);
   }
 
-  void predict(const Prob* P, Context ctx, Prob *pp) {
-    ctx %=  N;
-    for(int i=0;i<nfeature;i++)
+  void predict(const Prob* P, const Context *pctx, Prob *pp) {
+    for(int i=0;i<nFeature;i++)
       X[i] = LUT.stretch(P[i]);
 
-    *pp = prev_prob = LUT.squash( dot(X, W[ctx], nfeature) >> 16 );
-    prev_ctx = ctx;
+    for(int k=0;k<nHidden;k++) {
+      int ctx = pctx[k] & 0xFF;
+      prev_ctx[k] = ctx;
+      X1[k] = LUT.stretch(LUT.squash( (dot(X, W[k][ctx], nFeature) * 1) >> 16));
+    }
+    *pp = prev_prob = LUT.squash( (dot(X1, W1, nHidden) * 1) >> 16 );
   }
 
   void update(uint8_t bit) {
-    train(W[prev_ctx], X, prev_prob, bit, 55);
+    for(int k=0;k<nHidden;k++) {
+      train(W[k][prev_ctx[k]], X, nFeature, LUT.squash(X1[k]), bit, 13);
+    }
+    train(W1, X1, nHidden, prev_prob, bit, 3);
   }
 
   void update(uint8_t bit, Prob p) {
@@ -47,7 +62,7 @@ public:
   }
 
 private:
-  int32_t dot(int32_t* a, int32_t* b, int n) {
+  int32_t dot(int32_t* a, int32_t* b, size_t n) {
     int32_t s = 0;
     for(int i=0;i<n;i++) {
       s += a[i] * b[i];
@@ -56,10 +71,10 @@ private:
     return s;
   }
 
-  void train(Weight *w, int32_t *x, Prob y, uint8_t bit, int lr) {
+  void train(Weight *w, int32_t *x, size_t len, Prob y, uint8_t bit, int lr) {
     int loss = ((bit << 12) - y) * lr;
 
-    for(int i=0;i<nfeature;i++)
+    for(int i=0;i<len;i++)
       w[i] = w[i] + ((x[i] * loss) >> 16);
   }
 

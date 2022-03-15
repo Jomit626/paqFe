@@ -10,15 +10,15 @@
 namespace paqFe::internal {
 
 template<
-  int C1AddrBits = 16,
-  int C2AddrBits = 16,
-  int C3AddrBits = 16,
-  int C4AddrBits = 16,
-  int C5AddrBits = 16,
-  int C6AddrBits = 16,
-  int C7AddrBits = 16,
-  int C9AddrBits = 16,
-  int C12AddrBits = 16
+  int C1AddrBits = 20,
+  int C2AddrBits = 20,
+  int C3AddrBits = 20,
+  int C4AddrBits = 20,
+  int C5AddrBits = 20,
+  int C6AddrBits = 20,
+  int C7AddrBits = 20,
+  int C9AddrBits = 20,
+  int C12AddrBits = 20
 >
 class NormalModel {
 protected:
@@ -42,9 +42,8 @@ protected:
   ContextMap<MulHash, C12AddrBits> cm14;
 
 public:
-  static constexpr int nProb = decltype(cm1)::nProb * 1;
+  static constexpr int nProb = decltype(cm1)::nProb * 9;
   static constexpr int nCtx = 7;
-  static constexpr int CtxShift = 2;
 
   NormalModel() {
     for(int i=0;i++;i<15) {
@@ -131,10 +130,14 @@ protected:
     }
   }
 
+  uint64_t hash(const uint64_t x0) {
+  return (x0 + 1) * UINT64_C(0x9E3779B97F4A7C15);
+  }
+
   void updateContextByte(uint8_t byte) {
     C = (C << 8) | byte;
     for(int i = 14; i > 0; --i) {
-      ctx[i] = MulHash(ctx[i - 1] + (byte + (i << 10U)));
+      ctx[i] = hash(ctx[i - 1] + (byte + (i << 10U)));
     }
   }
 };

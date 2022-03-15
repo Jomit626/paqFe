@@ -11,9 +11,10 @@ namespace paqFe {
 class paqFeFile {
 public:
   using Model = internal::ModelGroup<
+                          //internal::Orders<>,
                           internal::ModelSimpleBytePredict<internal::NormalModel<>>
                           >;
-  using Mixer = internal::Mixer<Model::nProb, 1024>;
+  using Mixer = internal::Mixer<Model::nProb, Model::nCtx>;
   using Predictor = internal::Predictor<8, Model, Mixer>;
   using Engine = internal::CompressEngineNw<8, Predictor>;
 private:

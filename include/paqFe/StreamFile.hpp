@@ -43,7 +43,7 @@ public:
 
     h = fopen(pathname, "wb");  // header
 
-    delete(pathname_subfix);
+    free(pathname_subfix);
     return h != NULL;
   }
 
@@ -102,7 +102,7 @@ public:
 
     h = fopen(pathname, "rb");  // header
 
-    delete(pathname_subfix);
+    free(pathname_subfix);
     return h != NULL;
   }
 

@@ -20,14 +20,12 @@ private:
 
   AttributeSumDeclare(nProb)
   AttributeSumDeclare(nCtx)
-  AttributeSumDeclare(CtxShift)
 
 #undef AttributeSumDeclare
 public:
 
   static constexpr int nProb = nProbSum<Models...>();
   static constexpr int nCtx = nCtxSum<Models...>();
-  static constexpr int CtxShift = CtxShiftSum<Models...>();
 
   void predict(uint8_t bit, Prob *pp, Context* pctx) {
     predict<Models...>(bit, pp, pctx);
