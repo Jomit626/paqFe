@@ -32,8 +32,12 @@ class ContextMap {
 protected:
   static constexpr size_t N = 1 << AddrBits;
   AssociativeHashMap<Line, uint8_t, sizeof(Line) * N, 16> hashmap;
-  StateMap<1 << 12> sm;
+  StateMap<1 << 8> sm;
   StateMap<1 << 12> sm2;
+
+  StateMap<1 << 8> bhMap8;
+  StateMap<1 << 12> bhMap12;
+
   bool first = true;
   uint8_t counter = 0;
   uint32_t C0 = 1;
@@ -42,7 +46,7 @@ protected:
   State *active_line;
   int binary_idx = 0;
 public:
-  static constexpr int nProb = 6;
+  static constexpr int nProb = 8;
   static constexpr int CtxShift = 0;
 
   State* pState;
@@ -59,6 +63,9 @@ public:
 
     sm.update(bit);
     sm2.update(bit);
+    bhMap8.update(bit);
+    bhMap12.update(bit);
+
     pState->next(bit);
 
     updateContext(bit, ctx);
@@ -80,13 +87,13 @@ public:
   
     Prob p1;
     sm.predict(*pState, &p1);
+    int n0 = pState->zero_cnt();
+    int n1 = pState->one_cnt();
+    int bitIsUncertain = n0 != 0 && n1 != 0;
     if(*pState != 0) {
       int scale = 64;
       const int st = (LUT.stretch(p1) * scale) >> 8;
       const int contextIsYoung = int(*pState <= 2);
-      int n0 = pState->zero_cnt();
-      int n1 = pState->one_cnt();
-      int bitIsUncertain = n0 != 0 && n1 != 0;
       pp[0] = LUT.squash(st >> contextIsYoung);
       pp[1] = LUT.squash(((p1 - 2048) * scale) >> 9);
       pp[2] = LUT.squash((bitIsUncertain - 1) & st); // when both counts are nonzero add(0) otherwise add(st)
@@ -97,6 +104,30 @@ public:
       pp[0] = pp[1] = pp[2] = pp[3] = pp[5];
     }
     pp[4] = p1;
+
+
+    const uint8_t byte1 = l0->slot0.c1;
+    const uint8_t byte2 = l0->slot0.c2;
+    const uint8_t byte3 = l0->slot0.c3;
+    const int bhBits = (((byte1 >> (7 - bpos)) & 1)) | (((byte2 >> (7 - bpos)) & 1) << 1) |
+                           (((byte3 >> (7 - bpos)) & 1) << 2);
+    const uint8_t byteState = l0->slot0.states[0];
+    const bool complete1 = (byteState >= 3) || (byteState >= 1 && bpos == 0);
+    const bool complete2 = (byteState >= 7) || (byteState >= 3 && bpos == 0);
+    const bool complete3 = (byteState >= 15) || (byteState >= 7 && bpos == 0);
+
+    int bhState = 0; // 4 bit
+    if( complete3 ) {
+      bhState = 8U | (bhBits); //we have seen 3 bytes (at least)
+    } else if( complete2 ) {
+      bhState = 4U | (bhBits & 3U); //we have seen 2 bytes
+    } else if( complete1 ) {
+      bhState = 2U | (bhBits & 1U); //we have seen 1 byte only
+    }
+
+    const uint8_t stateGroup = pState->group();
+    bhMap8.predict(bitIsUncertain << 7U | (bhState << 3U) | bpos, &pp[6]);
+    bhMap12.predict(stateGroup << 7U | (bhState << 3U) | bpos, &pp[7]);
   }
 
   Prob pnxt[nProb] = {ProbEven};
@@ -127,6 +158,7 @@ protected:
     C0 = (C0 << 1) | bit;
     uint8_t tag = ctx ^ (ctx >> 8);
     if(counter == 8) {
+      l0->slot0.c3 = l0->slot0.c2;
       l0->slot0.c2 = l0->slot0.c1;
       if(l0->slot0.c1 == int8_t(C0)) {
         l0->slot0.cnt++;

@@ -6,6 +6,7 @@
 #include "models/NormalModel.hpp"
 #include "models/BiasModel.hpp"
 #include "models/Orders.hpp"
+#include "models/NewOrders.hpp"
 #include "Mixer.hpp"
 
 namespace paqFe {

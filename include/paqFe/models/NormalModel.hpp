@@ -11,14 +11,14 @@ namespace paqFe::internal {
 
 template<
   int C1AddrBits = 12,
-  int C2AddrBits = 13,
-  int C3AddrBits = 14,
-  int C4AddrBits = 15,
+  int C2AddrBits = 16,
+  int C3AddrBits = 16,
+  int C4AddrBits = 16,
   int C5AddrBits = 16,
-  int C6AddrBits = 17,
-  int C7AddrBits = 18,
-  int C9AddrBits = 18,
-  int C12AddrBits = 18
+  int C6AddrBits = 16,
+  int C7AddrBits = 16,
+  int C9AddrBits = 16,
+  int C12AddrBits = 16
 >
 class NormalModel {
 protected:
