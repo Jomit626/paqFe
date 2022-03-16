@@ -10,10 +10,12 @@
 #include "TabHash.hpp"
 #include "TabHash.h"
 
-
 namespace paqFe::internal {
 
 typedef size_t(*HashFunc)(uint64_t);
+
+template<HashFunc H, int AddrBits>
+class ContextMap {
 union Line {
   struct slot0 {
     State states[3];
@@ -26,17 +28,13 @@ union Line {
     State states[7];
   } slot;
 };
-
-template<HashFunc H, int AddrBits>
-class ContextMap {
 protected:
   static constexpr size_t N = 1 << AddrBits;
   AssociativeHashMap<Line, uint8_t, sizeof(Line) * N, 16> hashmap;
-  StateMap<1 << 8> sm;
-  StateMap<1 << 12> sm2;
+  StateMap<1 << 10> sm2[8];
 
-  StateMap<1 << 8> bhMap8;
-  StateMap<1 << 12> bhMap12;
+  StateMap<1 << 5> bhMap5[8];
+  StateMap<1 << 9> bhMap9[8];
 
   bool first = true;
   uint8_t counter = 0;
@@ -61,10 +59,9 @@ public:
   void predict(uint8_t bit, uint64_t ctx, Prob *pp, int *cnt) {
     if(first) first = false;
 
-    sm.update(bit);
-    sm2.update(bit);
-    bhMap8.update(bit);
-    bhMap12.update(bit);
+    sm2[counter].update(bit);
+    bhMap5[counter].update(bit);
+    bhMap9[counter].update(bit);
 
     pState->next(bit);
 
@@ -79,14 +76,13 @@ public:
       const int predictedBit = BitSel(l0->slot0.c1, bpos);
       const int byte1IsUncertain = static_cast<const int>(l0->slot0.c1 != l0->slot0.c2);
       const int runCount = l0->slot0.cnt;
-      int c = runCount << 4U | bp << 2U | byte1IsUncertain << 1 | predictedBit;
-      sm2.predict(c, &pp[5]);
+      int c = runCount << 2U | byte1IsUncertain << 1 | predictedBit;
+      sm2[counter].predict(c, &pp[5]);
     } else{
-      sm2.predict(0, &pp[5]);
+      sm2[counter].predict(0, &pp[5]);
     }
   
-    Prob p1;
-    sm.predict(*pState, &p1);
+    Prob p1 = StaticStateMap::map[*pState];
     int n0 = pState->zero_cnt();
     int n1 = pState->one_cnt();
     int bitIsUncertain = n0 != 0 && n1 != 0;
@@ -126,8 +122,8 @@ public:
     }
 
     const uint8_t stateGroup = pState->group();
-    bhMap8.predict(bitIsUncertain << 7U | (bhState << 3U) | bpos, &pp[6]);
-    bhMap12.predict(stateGroup << 7U | (bhState << 3U) | bpos, &pp[7]);
+    bhMap5[counter].predict((bitIsUncertain << 4) | (bhState), &pp[6]);
+    bhMap9[counter].predict((stateGroup << 4) | bhState, &pp[7]);
   }
 
   Prob pnxt[nProb] = {ProbEven};
@@ -161,7 +157,8 @@ protected:
       l0->slot0.c3 = l0->slot0.c2;
       l0->slot0.c2 = l0->slot0.c1;
       if(l0->slot0.c1 == int8_t(C0)) {
-        l0->slot0.cnt++;
+        if(l0->slot0.cnt < 255)
+          l0->slot0.cnt++;
       } else {
         l0->slot0.c1 = C0;
         l0->slot0.cnt = 1;
