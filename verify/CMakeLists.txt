@@ -22,7 +22,6 @@ add_verify_db(mixer)
 add_verify_db(mixer-predict)
 add_verify_db(mixer-loss)
 add_verify_db(mixer-update)
-add_verify_db(orders_ctx)
 
 add_custom_target(
   vdb-all-exec
