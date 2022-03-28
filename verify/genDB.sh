@@ -2,7 +2,7 @@
 
 set -e
 
-PROJ_FOLDER="$(dirname "$0")/.."
+PROJ_FOLDER=$(realpath "$(dirname "$0")/..")
 
 DB_NAME=$1
 PROG=$2

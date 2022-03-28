@@ -15,6 +15,7 @@ class MixerWrapped : Mixer<nfeature, N> {
   using Parent = Mixer<nfeature, N>;
   int id = -1;
   Prob Ps[nfeature];
+  Weight Ws[nfeature];
 public:
 
   MixerWrapped() : Parent() {
@@ -22,27 +23,36 @@ public:
   }
 
   void predict(const Prob* P, Context ctx, Prob *pp) {
-    for(int i=0;i<nfeature;i++)
+    for(int i=0;i<nfeature;i++) {
       Ps[i] = P[i];
+      Ws[i] = Parent::W[ctx % N][i];
+    }
     Parent::predict(P, ctx, pp);
   }
 
   void update(uint8_t bit) {
-    Parent::update(bit);
     output(bit);
+    Parent::update(bit);
   }
 
   void update(uint8_t bit, Prob p) {
-    Parent::update(bit, p);
     output(bit);
+    Parent::update(bit, p);
   }
 
 private:
   void output(uint8_t bit) {
-    fprintf(gfout, "%d,", id);
+    // X
     for(int i=0;i<nfeature;i++)
-      fprintf(gfout, "%d,", Ps[i]);
-    fprintf(gfout, "%d,%d,%d,%d\n", Parent::prev_ctx, bit, Parent::prev_prob, dot(Xs, Ws[ctx], nfeature) >> 16);
+      fprintf(gfout, "%d,", Parent::X[i]);
+    
+    // W
+    for(int i=0;i<nfeature;i++)
+      fprintf(gfout, "%d,", Ws[i]);
+    
+    fprintf(gfout, "%d,%d\n", bit, Parent::prev_prob);
+
+    assert(Parent::prev_prob == LUT.squash(Parent::dot(Parent::X, Ws, nfeature) >> 16));
   }
 };
 
@@ -51,7 +61,7 @@ using IPredictor = Predictor<8, paqFe::paqFeFile::Model, MixerWrapped<paqFe::paq
 void generate_db(FILE* fin, FILE* fout) {
   gfout = fout;
   IPredictor &predictor = *(new IPredictor());
-
+  
   uint8_t data[128];
   size_t n = 0;
   Prob prob = 2048;
