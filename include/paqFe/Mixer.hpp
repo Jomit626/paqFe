@@ -21,6 +21,8 @@ protected:
   Context prev_ctx[nHidden];
   int counter = 0;
   static constexpr int BatchSize = 1024;
+  static constexpr int Layer1LR = 7;
+  static constexpr int Layer2LR = 3;
 public:
 
   Mixer() {
@@ -49,16 +51,16 @@ public:
       prev_ctx[k] = ctx;
       int32_t y = dot(X, W[k][ctx], nFeature);
       y = (y * 1) >> 16;
-      X1[k] = LUT.stretch(LUT.squash(y));
+      X1[k] = y;
     }
-    *pp = prev_prob = LUT.squash( (dot(X1, W1, nHidden) * 1) >> 16 );
+    *pp = prev_prob = LUT.squash( (dot(X1, W1, nHidden)) >> 16 );
   }
 
   void update(uint8_t bit) {
     for(int k=0;k<nHidden;k++) {
-      train(W[k][prev_ctx[k]], X, nFeature, LUT.squash(X1[k]), bit, 7);
+      train(W[k][prev_ctx[k]], X, nFeature, LUT.squash(X1[k]), bit, Layer1LR);
     }
-    accLoss(X1, nHidden, prev_prob, bit, 3, dW1);
+    accLoss(X1, nHidden, prev_prob, bit, Layer2LR, dW1);
     if(counter % BatchSize == BatchSize - 1) {
       counter = 0;
       vecAdd(W1, dW1, nHidden);
@@ -72,7 +74,7 @@ public:
     update(bit);
   }
 
-private:
+protected:
   int32_t dot(int32_t* a, int32_t* b, size_t n) {
     int32_t s = 0;
     for(int i=0;i<n;i++) {
@@ -102,8 +104,12 @@ private:
     }
   }
 
+  int lossCal(Prob y, uint8_t bit, int lr) {
+    return ((bit << 12) - y) * lr;
+  }
+
   void train(Weight *w, int32_t *x, size_t len, Prob y, uint8_t bit, int lr) {
-    int loss = ((bit << 12) - y) * lr;
+    int loss = lossCal(y, bit, lr);
 
     for(int i=0;i<len;i++) {
       Weight wt = w[i] + ((((x[i] * loss * 2) >> 16U) + 1) >> 1U);

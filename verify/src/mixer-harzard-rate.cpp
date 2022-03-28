@@ -10,41 +10,53 @@ FILE* gfout;
 
 int mixer_id = 0;
 
-template<int nfeature, size_t N = 80>
+template<int nfeature, size_t N = 128>
 class MixerWrapped : Mixer<nfeature, N> {
   using Parent = Mixer<nfeature, N>;
+  int id = -1;
+  int prev_ctx = 0;
 
+  int harzard_cnt = -1; // 'cause first input 0 is compred with NULL prev_ctx
+  int cnt = 0;
+
+  Prob Ps[nfeature];
+  Weight Ws[nfeature];
 public:
+
   MixerWrapped() : Parent() {
+    id = mixer_id++;
+  }
+
+  ~MixerWrapped() {
+    printf("%d, %d, %d, %lf\n", id, harzard_cnt, cnt, (double)harzard_cnt/cnt);
   }
 
   void predict(const Prob* P, Context ctx, Prob *pp) {
+    for(int i=0;i<nfeature;i++) {
+      Ps[i] = P[i];
+      Ws[i] = Parent::W[ctx % N][i];
+    }
     Parent::predict(P, ctx, pp);
+    harzard_dectet(ctx);
   }
 
   void update(uint8_t bit) {
-    pre_output();
     Parent::update(bit);
-    output(bit);
   }
 
   void update(uint8_t bit, Prob p) {
-    pre_output();
     Parent::update(bit, p);
-    output(bit);
   }
 
 private:
-  void pre_output() {
-    for(int i=0;i<nfeature;i++)
-      fprintf(gfout, "%d,", Parent::X[i]);
-    for(int i=0;i<nfeature;i++)
-      fprintf(gfout, "%d,", Parent::W[Parent::prev_ctx][i]);
-  }
-  void output(uint8_t bit) {
-    for(int i=0;i<nfeature;i++)
-      fprintf(gfout, "%d,", Parent::W[Parent::prev_ctx][i]);
-    fprintf(gfout, "%d\n", Parent::loss(Parent::prev_prob, bit, Parent::lr));
+  void harzard_dectet(int ctx) {
+    fprintf(gfout, "%d, %d\n", id, ctx);
+    ctx ;
+    cnt ++;
+    if(prev_ctx == ctx) {
+      harzard_cnt ++;
+    }
+    prev_ctx = ctx;
   }
 };
 
@@ -53,7 +65,7 @@ using IPredictor = Predictor<8, paqFe::paqFeFile::Model, MixerWrapped<paqFe::paq
 void generate_db(FILE* fin, FILE* fout) {
   gfout = fout;
   IPredictor &predictor = *(new IPredictor());
-
+  
   uint8_t data[128];
   size_t n = 0;
   Prob prob = 2048;

@@ -13,38 +13,47 @@ int mixer_id = 0;
 template<int nFeature, int nHidden>
 class MixerWrapped : Mixer<nFeature, nHidden> {
   using Parent = Mixer<nFeature, nHidden>;
-  int id = -1;
-  Prob Ps[nFeature];
-public:
 
+public:
   MixerWrapped() : Parent() {
-    id = mixer_id++;
   }
 
   void predict(const Prob* P, const Context *pctx, Prob *pp) {
-    for(int i=0;i<nFeature;i++)
-      Ps[i] = P[i];
     Parent::predict(P, pctx, pp);
   }
 
   void update(uint8_t bit) {
+    pre_output();
     Parent::update(bit);
     output(bit);
   }
 
   void update(uint8_t bit, Prob p) {
+    pre_output();
     Parent::update(bit, p);
     output(bit);
   }
-
 private:
+  int32_t Ws[nHidden][nFeature];
+  void pre_output() {
+    for(int j=0;j<nHidden;j++)
+      for(int i=0;i<nFeature;i++)
+        Ws[j][i] = Parent::W[j][Parent::prev_ctx[j]][i];
+  }
   void output(uint8_t bit) {
-    fprintf(gfout, "%d,", id);
-    for(int i=0;i<nFeature;i++)
-      fprintf(gfout, "%d,", Ps[i]);
-    for(int i=0;i<nHidden;i++)
-      fprintf(gfout, "%d,", Parent::prev_ctx[i]);
-    fprintf(gfout, "%d,%d\n", bit, Parent::prev_prob);
+    for(int j=0;j<nHidden;j++) {
+      for(int i=0;i<nFeature;i++)
+        fprintf(gfout, "%d,", Parent::X[i]);
+
+      for(int i=0;i<nFeature;i++)
+        fprintf(gfout, "%d,", Ws[j][i]);
+
+      for(int i=0;i<nFeature;i++)
+        fprintf(gfout, "%d,", Parent::W[j][Parent::prev_ctx[j]][i]);
+
+      Prob p = LUT.squash(Parent::X1[j]);
+      fprintf(gfout, "%d\n", Parent::lossCal(p, bit, Parent::Layer1LR));
+    }
   }
 };
 

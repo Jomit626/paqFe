@@ -8,22 +8,15 @@ using namespace paqFe::internal;
 
 FILE* gfout;
 
-int mixer_id = 0;
-
 template<int nFeature, int nHidden>
 class MixerWrapped : Mixer<nFeature, nHidden> {
   using Parent = Mixer<nFeature, nHidden>;
-  int id = -1;
-  Prob Ps[nFeature];
 public:
 
   MixerWrapped() : Parent() {
-    id = mixer_id++;
   }
 
   void predict(const Prob* P, const Context *pctx, Prob *pp) {
-    for(int i=0;i<nFeature;i++)
-      Ps[i] = P[i];
     Parent::predict(P, pctx, pp);
   }
 
@@ -39,12 +32,10 @@ public:
 
 private:
   void output(uint8_t bit) {
-    fprintf(gfout, "%d,", id);
-    for(int i=0;i<nFeature;i++)
-      fprintf(gfout, "%d,", Ps[i]);
-    for(int i=0;i<nHidden;i++)
-      fprintf(gfout, "%d,", Parent::prev_ctx[i]);
-    fprintf(gfout, "%d,%d\n", bit, Parent::prev_prob);
+    for(int i=0;i<nHidden;i++) {
+      Prob p = LUT.squash(Parent::X1[i]);
+      fprintf(gfout, "%d,%d,%d\n", bit, p, Parent::lossCal(p , bit, Parent::Layer1LR));
+    }
   }
 };
 

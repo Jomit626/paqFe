@@ -16,6 +16,8 @@ DATA_FOLDER="$PROJ_FOLDER/test/data"
 TMP_FOLDER="$PROJ_FOLDER/tmp"
 LAST_RESULT_FILE="$TMP_FOLDER/result.tmp"
 
+mkdir -p "$TMP_FOLDER"
+touch $LAST_RESULT_FILE
 LAST_RESULT=($(cat $LAST_RESULT_FILE))
 result=""
 
