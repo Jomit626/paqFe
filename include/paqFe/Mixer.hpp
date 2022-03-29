@@ -49,8 +49,11 @@ public:
     for(int k=0;k<nHidden;k++) {
       int ctx = pctx[k] & 0xFF;
       prev_ctx[k] = ctx;
-      int32_t y = dot(X, W[k][ctx], nFeature);
-      y = (y * 1) >> 16;
+      int32_t y = dot(X, W[k][ctx], nFeature) >> 16;
+      if(y > 2047)
+        y = 2047;
+      else if(y <= -2048)
+        y = -2048;
       X1[k] = y;
     }
     *pp = prev_prob = LUT.squash( (dot(X1, W1, nHidden)) >> 16 );

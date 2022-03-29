@@ -56,7 +56,7 @@ private:
       for(int i=0;i<nFeature;i++)
         fprintf(gfout, "%d,", Ws[j][i]);
         
-      fprintf(gfout, "%d,%d\n", bit, LUT.squash(Parent::X1[j]));  // ! TMP
+      fprintf(gfout, "%d,%d\n", bit, Parent::X1[j]);
     }
   }
 };
