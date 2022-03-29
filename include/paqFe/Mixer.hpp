@@ -115,7 +115,7 @@ protected:
     int loss = lossCal(y, bit, lr);
 
     for(int i=0;i<len;i++) {
-      Weight wt = w[i] + ((((x[i] * loss * 2) >> 16U) + 1) >> 1U);
+      Weight wt = w[i] + ((x[i] * loss ) >> 16U);
       if( wt < -32768 ) {
         wt = -32768;
       } else if( wt > 32767 ) {
