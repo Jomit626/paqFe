@@ -23,6 +23,7 @@ add_verify_db(mixer-config)
 add_verify_db(mixer-l1-pe-predict)
 add_verify_db(mixer-l1-pe-loss)
 add_verify_db(mixer-l1-pe-update)
+add_verify_db(mixer-l2)
 add_verify_db(mixer-harzard)
 add_verify_db(mixer-harzard-rate)
 

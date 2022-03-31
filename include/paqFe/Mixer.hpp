@@ -56,7 +56,12 @@ public:
         y = -2048;
       X1[k] = y;
     }
-    *pp = prev_prob = LUT.squash( (dot(X1, W1, nHidden)) >> 16 );
+    int y = (dot(X1, W1, nHidden)) >> 16;
+    if(y > 2047)
+      y = 2047;
+    else if(y <= -2048)
+      y = -2048;
+    *pp = prev_prob = LUT.squash(y);
   }
 
   void update(uint8_t bit) {
@@ -64,12 +69,12 @@ public:
       train(W[k][prev_ctx[k]], X, nFeature, LUT.squash(X1[k]), bit, Layer1LR);
     }
     accLoss(X1, nHidden, prev_prob, bit, Layer2LR, dW1);
-    if(counter % BatchSize == BatchSize - 1) {
+    counter ++;
+    if(counter  == BatchSize) {
       counter = 0;
       vecAdd(W1, dW1, nHidden);
       memset(dW1,0,sizeof(dW1));
     }
-    counter ++;
   }
 
   void update(uint8_t bit, Prob p) {
@@ -88,15 +93,10 @@ protected:
   }
 
   void accLoss(int32_t *x, size_t len, Prob y, uint8_t bit, int lr, Weight *dws) {
-    int loss = ((bit << 12) - y) * lr;
+    int loss = lossCal(y, bit, lr);
 
     for(int i=0;i<len;i++) {
-      Weight dw = dws[i] + ((((x[i] * loss * 2) >> 16U) + 1) >> 1U);
-      if( dw < -32768 ) {
-        dw = -32768;
-      } else if( dw > 32767 ) {
-        dw = 32767;
-      }
+      Weight dw = dws[i] + ((x[i] * loss ) >> 16U);
       dws[i] = dw;
     }
   }
@@ -115,13 +115,7 @@ protected:
     int loss = lossCal(y, bit, lr);
 
     for(int i=0;i<len;i++) {
-      Weight wt = w[i] + ((x[i] * loss ) >> 16U);
-      if( wt < -32768 ) {
-        wt = -32768;
-      } else if( wt > 32767 ) {
-        wt = 32767;
-      }
-      w[i] = wt;
+      w[i] = w[i] + ((x[i] * loss ) >> 16U);
     }
   }
 
