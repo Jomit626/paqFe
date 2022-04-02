@@ -3,7 +3,6 @@ set -e
 
 PROJ_FOLDER="$(dirname "$0")/.."
 DATA_FOLDER="$PROJ_FOLDER/test/data"
-VERIFY_DATA_FOLDER="$PROJ_FOLDER/verify/data"
 
 mkdir -p $DATA_FOLDER
 mkdir -p $VERIFY_DATA_FOLDER
@@ -16,5 +15,3 @@ rm calgary.tar.gz
 
 cd -
 
-cat $DATA_FOLDER/book1 | head -n 8 > $VERIFY_DATA_FOLDER/small
-cat $DATA_FOLDER/book1 | head -n 128 > $VERIFY_DATA_FOLDER/medium
