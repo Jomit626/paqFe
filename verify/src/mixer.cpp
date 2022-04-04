@@ -39,9 +39,11 @@ public:
 
 private:
   void output(uint8_t bit) {
-    fprintf(gfout, "%d,", id);
+    if(id != 1) // TODO: solve problem of forcing first output prob to 2048
+      return;
+    
     for(int i=0;i<nFeature;i++)
-      fprintf(gfout, "%d,", Ps[i]);
+      fprintf(gfout, "%d,", Parent::X[i]);
     for(int i=0;i<nHidden;i++)
       fprintf(gfout, "%d,", Parent::prev_ctx[i]);
     fprintf(gfout, "%d,%d\n", bit, Parent::prev_prob);
