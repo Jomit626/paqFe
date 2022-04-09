@@ -14,4 +14,3 @@ tar -xf calgary.tar.gz
 rm calgary.tar.gz
 
 cd -
-

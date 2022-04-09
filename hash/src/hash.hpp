@@ -45,7 +45,7 @@ public:
     return true;
   }
 
-  void dump(FILE* f, const char* name) {
+  void dump_c(FILE* f, const char* name) {
     fprintf(f, "uint32_t %s[%d][256] = {\n", name, nByte);
     for(int i=0;i<nByte;i++) {
       fprintf(f, "{");
@@ -61,6 +61,26 @@ public:
 
     }
     fprintf(f, "};\n");
+  }
+
+  void dump_scala(FILE* f, const char* name) {
+    fprintf(f, "object %s {\n", name);
+    fprintf(f, "  def apply() = {Seq(\n");
+    for(int i=0;i<nByte;i++) {
+      fprintf(f, "Seq(\n");
+      for(int j=0;j<256;j++) {
+        if(j % 8 == 7) {
+          if(j == 255)
+            fprintf(f, "0X%08X),\n", X[i][j]);
+          else
+            fprintf(f, "0X%08X,\n", X[i][j]);
+        } else {
+          fprintf(f, "0X%08X,", X[i][j]);
+        }
+      }
+    }
+    fprintf(f, "  )}\n");
+    fprintf(f, "}\n");
   }
 };
 

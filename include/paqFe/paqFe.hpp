@@ -13,8 +13,7 @@ class paqFeFile {
 public:
   using Model = internal::ModelGroup<
                           internal::BiasModel,
-                          internal::Orders<>,
-                          internal::ModelSimpleBytePredict<internal::NormalModel<>>
+                          internal::Orders<>
                           >;
   using Mixer = internal::Mixer<Model::nProb, Model::nCtx>;
   using Predictor = internal::Predictor<8, Model, Mixer>;

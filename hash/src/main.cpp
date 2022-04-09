@@ -9,12 +9,14 @@
 
 #include "eval.hpp"
 
+#define SEED 55555
+
 using std::chrono::high_resolution_clock;
 
 template<int N, int M>
-void gen(const std::vector<uint64_t> &t, const char* name, FILE* f) {
+void gen(const std::vector<uint64_t> &t, const char* name, FILE* c_file, FILE* scala_file) {
   constexpr size_t TableSize = 1 << M;
-  constexpr int SearchCnt = 16 * 1000 * 32;
+  constexpr int SearchCnt = 1000 * 32;
 
   Scores s_best;
   TabHashing<N, M> h_best;
@@ -28,7 +30,7 @@ void gen(const std::vector<uint64_t> &t, const char* name, FILE* f) {
     Scores s, s_best_loc;
     TabHashing<N, M> h, h_best_loc;
     TableEntry *tab = new_table(TableSize);
-    boost::random::taus88 rng(time(0) + omp_get_thread_num());
+    boost::random::taus88 rng(SEED + omp_get_thread_num());
     boost::random::uniform_int_distribution<> dist;
 
     for(int i=0;i<n;i++) {
@@ -59,7 +61,8 @@ void gen(const std::vector<uint64_t> &t, const char* name, FILE* f) {
 
   }
   printf("result of %s:\nconfilict_rate:%lf\nhit_rate:%lf\nweighted_hit_rate:%lf\n",name, s_best.confilict_rate, s_best.hit_rate, s_best.weighted_hit_rate);
-  h_best.dump(f, name);
+  h_best.dump_c(c_file, name);
+  h_best.dump_scala(scala_file, name);
 }
 
 int main(int argc, char** argv) {
@@ -78,18 +81,20 @@ int main(int argc, char** argv) {
   if(!input_pathname)
     return 1;
 
-  FILE *fout = fopen("../include/paqFe/models/TabHash.h", "w");
-  fprintf(fout, "\/\/! This file is automatic generated. DO NOT MODIFY.\n\n");
+  FILE *c_file = fopen("../include/paqFe/models/TabHash.h", "w");
+  FILE *scala_file = fopen("../include/paqFe/models/TabHash.scala", "w");
+  fprintf(c_file, "//! This file is automatic generated. DO NOT MODIFY.\n\n");
+  fprintf(scala_file, "//! This file is automatic generated. DO NOT MODIFY.\n\n");
 
   Trace trace(input_pathname);
   printf("Input process done.\n");
 
-  gen<21,16>(trace.getTrace(2), "O2HashTab", fout);
-  gen<29,16>(trace.getTrace(3), "O3HashTab", fout);
-  gen<37,17>(trace.getTrace(4), "O4HashTab", fout);
+  gen<21,16>(trace.getTrace(2), "O2HashTab", c_file, scala_file);
+  gen<29,16>(trace.getTrace(3), "O3HashTab", c_file, scala_file);
+  gen<37,17>(trace.getTrace(4), "O4HashTab", c_file, scala_file);
 
-  fclose(fout);
-
+  fclose(c_file);
+  fclose(scala_file);
   return 0;
 }
 

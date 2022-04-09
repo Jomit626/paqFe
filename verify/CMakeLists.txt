@@ -17,6 +17,7 @@ function(add_verify_db DB_NAME)
 endfunction(add_verify_db name)
 
 add_verify_db(coder)
+add_verify_db(ordersctx)
 add_verify_db(mixer-config)
 add_verify_db(mixer-l1-pe-predict)
 add_verify_db(mixer-l1-pe-loss)

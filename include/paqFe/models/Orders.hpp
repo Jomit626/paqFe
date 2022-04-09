@@ -67,6 +67,11 @@ protected:
   uint64_t C4 = 0;
   uint64_t C = 0;
 
+  uint32_t h1 = 0;
+  uint32_t h2 = 0;
+  uint32_t h3 = 0;
+  uint32_t h4 = 0;
+
 public:
   static constexpr int nProb = 4;
   static constexpr int nCtx = 1;
@@ -180,6 +185,8 @@ protected:
     C2 = (C & 0xFFFF) << 5;
     C3 = (C & 0xFFFFFF) << 5;
     C4 = (C & 0xFFFFFFFF) << 5;
+    updateHash();
+
     return true;
   }
 
@@ -189,15 +196,23 @@ protected:
     C2 = C2 + nibble + 16;
     C3 = C3 + nibble + 16;
     C4 = C4 + nibble + 16;
+    updateHash();
 
     return true;
   }
 
+  void updateHash() {
+    h1 = C1 & O1Mask;
+    h2 = tab_hashing<21, 16>(O2HashTab, C2) & O2Mask;
+    h3 = tab_hashing<29, 16>(O3HashTab, C3) & O3Mask;
+    h4 = tab_hashing<34, 17>(O4HashTab, C4) & O4Mask;
+  }
+
   void selectLines() {
-    o1_line = selLine(o1_lines, C1, C1 & O1Mask, &o1_hit);
-    o2_line = selLine(o2_lines, C2, tab_hashing<21, 16>(O2HashTab, C2) & O2Mask, &o2_hit);
-    o3_line = selLine(o3_lines, C3, tab_hashing<29, 16>(O3HashTab, C3) & O3Mask, &o3_hit);
-    o4_line = selLine(o4_lines, C4, tab_hashing<34, 17>(O4HashTab, C4) & O4Mask, &o4_hit);
+    o1_line = selLine(o1_lines, C1, h1, &o1_hit);
+    o2_line = selLine(o2_lines, C2, h2, &o2_hit);
+    o3_line = selLine(o3_lines, C3, h3, &o3_hit);
+    o4_line = selLine(o4_lines, C4, h4, &o4_hit);
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {
