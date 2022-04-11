@@ -27,8 +27,8 @@ public:
 
   Mixer() {
     memset(dW1, 0x00, sizeof(dW1));
-    Weight w = (1 << 16) / nFeature;
-    Weight w1 = (1 << 16) / nHidden;
+    Weight w = (1 << 16) / nFeature - 1;
+    Weight w1 = (1 << 16) / nHidden - 1;
     for(int k=0;k<nHidden;k++) {
       W1[k] = w1;
       prev_ctx[k] = 0;
@@ -104,6 +104,10 @@ protected:
   void vecAdd(int32_t* a, int32_t* b, size_t n){
     for(int i=0;i<n;i++) {
       a[i] += b[i];
+      if(a[i] > 65535)
+        a[i] = 65535;
+      else if(a[i] < -65536)
+        a[i] = -65536;
     }
   }
 
