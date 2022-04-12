@@ -69,10 +69,10 @@ public:
     uint8_t nibble0 = (byte >> 4) & 0xF;
     uint8_t nibble1 = byte & 0xF;
 
-    fprintf(gfout, "%d,%d,%d,%d,%d\n", nibble0, h1, h2, h3, h4);
+    fprintf(gfout, "%d,%d,%d,%d,%d,%d,%d,%d,%d\n", nibble0, h1, h2, h3, h4, C1 & 0xFF, C2 & 0xFF, C3 & 0xFF, C4 & 0xFF);
     updateContextNibble1(nibble0);
 
-    fprintf(gfout, "%d,%d,%d,%d,%d\n", nibble1, h1, h2, h3, h4);
+    fprintf(gfout, "%d,%d,%d,%d,%d,%d,%d,%d,%d\n", nibble1, h1, h2, h3, h4, C1 & 0xFF, C2 & 0xFF, C3 & 0xFF, C4 & 0xFF);
     updateContextNibble0(nibble1);
   }
 };

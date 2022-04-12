@@ -51,13 +51,13 @@ protected:
   int binary_idx = 0;
 
   Line* o1_line = o1_lines;
-  bool o1_hit = false;
+  bool o1_hit = true;
   Line* o2_line = o2_lines;
-  bool o2_hit = false;
+  bool o2_hit = true;
   Line* o3_line = o3_lines;
-  bool o3_hit = false;
+  bool o3_hit = true;
   Line* o4_line = o4_lines;
-  bool o4_hit = false;
+  bool o4_hit = true;
 
   // bytewise context
   uint8_t C0 = 0; // current byte
@@ -251,7 +251,7 @@ protected:
   }
 
   Context get_context() {
-    return (o2_hit + o3_hit + o4_hit);
+    return (o1_hit + o2_hit + o3_hit + o4_hit);
   }
 };
 
