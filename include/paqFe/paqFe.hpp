@@ -12,7 +12,6 @@ namespace paqFe {
 class paqFeFile {
 public:
   using Model = internal::ModelGroup<
-                          internal::BiasModel,
                           internal::Orders<>
                           >;
   using Mixer = internal::Mixer<Model::nProb, Model::nCtx>;

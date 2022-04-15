@@ -43,8 +43,6 @@ class Predictor {
   Model m;
   Mixer mixers[N];
 
-  APM<1024 * 24> apms[N];
-
   int duty = 0;
   bool first = true;
 
@@ -52,11 +50,9 @@ public:
   void predict(uint8_t bit, Prob *pp) {
     Prob px, p1;
     if(first) {
-      apms[0].predict(0, ProbEven, &px);
       first = false;
     }
     mixers[duty].update(bit);
-    apms[duty].update(bit);
 
     duty = (duty + 1) % N;
 
@@ -67,8 +63,7 @@ public:
     Context ctx = m.ContextMix(&Ctx[0]) & 0xFF;
 
     mixers[duty].predict(P, Ctx, &px);
-    apms[duty].predict(ctx, px, &p1);
-    *pp = (px + p1 * 3) / 4;
+    *pp = px;
   };
 
   void predict_byte(uint8_t byte, Prob *pp) {
@@ -96,9 +91,7 @@ public:
       uint8_t bit = (byte >> (7 - i)) & 0x1;
       mixers[(duty + i) % N].update(bit, Px[i]);
 
-      apms[(duty + i) % N].predict(ctx[i], Px[i], &P1[i]);
-      apms[(duty + i) % N].update(bit);
-      pp[i] = (Px[i] + P1[i] * 3) / 4;
+      pp[i] = Px[i];
     }
     duty = (duty + 8) % N;
 
