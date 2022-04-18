@@ -38,10 +38,7 @@ public:
   }
 
 private:
-  void output(uint8_t bit) {
-    if(id != 1) // TODO: solve problem of forcing first output prob to 2048
-      return;
-    
+  void output(uint8_t bit) {    
     for(int i=0;i<nFeature;i++)
       fprintf(gfout, "%d,", Parent::X[i]);
     for(int i=0;i<nHidden;i++)

@@ -47,21 +47,19 @@ public:
 
 private:
   void output(uint8_t bit) {
-    if(id == 0) {
-      // X
-      for(int i=0;i<nFeature;i++)
-        fprintf(gfout, "%d,", Parent::X[i]);
-      
-      // ctx
-      for(int i=0;i<nHidden;i++)
-        fprintf(gfout, "%d,", Parent::prev_ctx[i]);
-      
-      // out
-      for(int i=0;i<nHidden;i++)
-        fprintf(gfout, "%d,", Parent::X1[i]);
+    // X
+    for(int i=0;i<nFeature;i++)
+      fprintf(gfout, "%d,", Parent::X[i]);
+    
+    // ctx
+    for(int i=0;i<nHidden;i++)
+      fprintf(gfout, "%d,", Parent::prev_ctx[i]);
+    
+    // out
+    for(int i=0;i<nHidden;i++)
+      fprintf(gfout, "%d,", Parent::X1[i]);
 
-      fprintf(gfout, "%d\n", bit);
-    }
+    fprintf(gfout, "%d\n", bit);
   }
 };
 
