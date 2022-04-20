@@ -11,6 +11,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   add_executable(paqfe test/src/paqfe.cpp)
   target_link_libraries(paqfe PUBLIC paqFe)
 
+  add_executable(paqfebw test/src/paqfebw.cpp)
+  target_link_libraries(paqfebw PUBLIC paqFe)
+
   add_test_target_i(statemap)
   add_test_target_i(usage)
   add_test_target_i(orders)
