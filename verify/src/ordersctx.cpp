@@ -10,7 +10,7 @@ FILE* gfout;
 template< size_t O2Size = 1ul << 20,
           size_t O3Size = 1ul << 20,
           size_t O4Size = 1ul << 21>
-class OrdersWrapper : Orders<O2Size, O3Size, O4Size> {
+class OrdersWrapper : public Orders<O2Size, O3Size, O4Size> {
 public:
   using Parent = Orders<O2Size, O3Size, O4Size>;
 
@@ -85,12 +85,12 @@ void generate_db(FILE* fin, FILE* fout) {
   uint8_t data[128];
   size_t n = 0;
   Prob prob = 2048;
-  Prob p[8];
-  Context ctx[8];
+  Prob p[8][OrdersWrapper<>::nProb];
+  Context ctx[8][OrdersWrapper<>::nCtx];
   while((n = fread(data, 1, 128, fin))) {
     for(int i=0;i<n;i++) {
       uint8_t byte = data[i];
-      model.predict_byte(byte, p, ctx, OrdersWrapper<>::Parent::nProb, OrdersWrapper<>::Parent::nCtx);
+      model.predict_byte(byte, &p[0][0], &ctx[0][0], OrdersWrapper<>::Parent::nProb, OrdersWrapper<>::Parent::nCtx);
     }
   }
 

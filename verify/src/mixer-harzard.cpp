@@ -10,17 +10,15 @@ FILE* gfout;
 
 int mixer_id = 0;
 
-template<int nfeature, size_t N = 128>
-class MixerWrapped : Mixer<nfeature, N> {
-  using Parent = Mixer<nfeature, N>;
+template<int nFeature, int nHidden>
+class MixerWrapped : Mixer<nFeature, nHidden> {
+  using Parent = Mixer<nFeature, nHidden>;
   int id = -1;
-  int prev_ctx = 0;
-
-  int harzard_cnt = -1; // 'cause first input 0 is compred with NULL prev_ctx
+  int prev_ctx[nHidden] = {};
+  int harzard_cnt[nHidden] = {-1}; // 'cause first input 0 is compred with NULL prev_ctx
   int cnt = 0;
 
-  Prob Ps[nfeature];
-  Weight Ws[nfeature];
+  int counter = 0;
 public:
 
   MixerWrapped() : Parent() {
@@ -28,16 +26,14 @@ public:
   }
 
   ~MixerWrapped() {
-    printf("%d, %d, %d, %lf\n", id, harzard_cnt, cnt, (double)harzard_cnt/cnt);
+    for(int i=0;i<nHidden;i++) {
+      printf("%d, %d, %d, %d, %lf%\n", id, i, harzard_cnt[i], cnt, (double)harzard_cnt[i]/cnt * 100.0);
+    }
   }
 
-  void predict(const Prob* P, Context ctx, Prob *pp) {
-    for(int i=0;i<nfeature;i++) {
-      Ps[i] = P[i];
-      Ws[i] = Parent::W[ctx % N][i];
-    }
-    Parent::predict(P, ctx, pp);
-    harzard_dectet(ctx);
+  void predict(const Prob* P, const Context *pctx, Prob *pp) {
+    harzard_dectet(pctx);
+    Parent::predict(P, pctx, pp);
   }
 
   void update(uint8_t bit) {
@@ -49,18 +45,20 @@ public:
   }
 
 private:
-  void harzard_dectet(int ctx) {
-    fprintf(gfout, "%d, %d\n", id, ctx);
-    ctx ;
+  void harzard_dectet(const Context *pctx) {
     cnt ++;
-    if(prev_ctx == ctx) {
-      harzard_cnt ++;
+    for(int i=0;i<nHidden;i++) {
+      if(prev_ctx[i] == (pctx[i] & 0xFF)) {
+        harzard_cnt[i] ++;
+      }
+      prev_ctx[i] = (pctx[i] & 0xFF);
     }
-    prev_ctx = ctx;
+
   }
 };
 
-using IPredictor = Predictor<8, paqFe::paqFeFile::Model, MixerWrapped<paqFe::paqFeFile::Model::nProb>>;
+using Model = paqFe::paqFeFile::Model;
+using IPredictor = Predictor<8, Model, MixerWrapped<Model::nProb, Model::nCtx>>;
 
 void generate_db(FILE* fin, FILE* fout) {
   gfout = fout;
