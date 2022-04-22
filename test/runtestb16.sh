@@ -30,7 +30,7 @@ do
 
   # cal ratio
   origin_size=$(stat -c "%s" $DATA_FOLDER/$file)
-  compressed_size=$(stat -c "%s" $TMP_FOLDER/$file.paqfe* | awk '{sum += $1} END{print sum}')
+  compressed_size=$(ls -l $TMP_FOLDER | grep $file | awk '{sum += $5} END{print sum}')
   rate=$(echo "scale=6; $compressed_size / $origin_size * 100" | bc)
 
 

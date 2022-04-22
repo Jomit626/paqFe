@@ -21,7 +21,12 @@ speed=$(echo "scale=2; $origin_size / $compress_time / 1024" | bc)
 
 echo - Compressed in ${compress_time}s, ${speed} KB/s
 echo - Compression ratio is $rate %.
-echo - Start Decompression Test.
+echo - Start Decompression Test
 
-$PAQFE -xv -o $VALID_DATA -i $OUT_DATA
-diff -s $DATA $VALID_DATA
+decompress_time=$({ /usr/bin/time -f %e -- $PAQFE -x -o $VALID_DATA -i $OUT_DATA; } 2>&1)
+speed=$(echo "scale=2; $compressed_size / $decompress_time / 1024" | bc)
+
+cmp $DATA $VALID_DATA
+
+echo - Decompression Test PASSED!
+echo - Decompressed in ${decompress_time}s, ${speed} KB/s
