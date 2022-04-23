@@ -56,11 +56,14 @@ protected:
   uint8_t C0 = 0; // current byte
   uint64_t C = 0;
   int salt = 0;
-  Context MixCtx = 0;
+  Context MixCtx0 = 0;
+  Context MixCtx1 = 0;
+  Context MixCtx2 = 0;
+  Context MixCtx3 = 0;
 public:
   static constexpr int nProbPerOrder = 1;
   static constexpr int nProb = 5 * nProbPerOrder;
-  static constexpr int nCtx = 1;
+  static constexpr int nCtx = 4;
 
   Orders() {
 #define MEMSET_ZERO(order, id) std::memset(O##order##lines, 0X00, sizeof(O##order##lines));
@@ -196,9 +199,12 @@ protected:
     uint32_t c1 = C & 0xFF;
     uint32_t c2 = (C >> 8) & 0xFF;
     uint32_t c3 = (C >> 16) & 0xFF;
-    uint32_t c4 = C;
+    uint32_t c4 = (C >> 24) & 0xFF;
 
-    MixCtx = (O1hit + O2hit + O3hit + O4hit + O5hit) | ((salt & 0x3) << 3);
+    MixCtx0 = (O1hit + O2hit + O3hit + O4hit + O5hit) | ((salt & 0x3) << 3);
+    MixCtx1 = (O1hit << 0) | (O2hit << 1) | (O3hit << 2) | (O4hit << 3) | (O5hit << 4) | ((salt & 0x3) << 5);
+    MixCtx2 = ((c1 == c2) << 0) | ((c1 == c3) << 1) | ((c1 == c3) << 2) | ((c1 == c4) << 3) | ((c2 == c3 << 3) << 4) | ((salt & 0x3) << 5);
+    MixCtx3 = ((c2 == c4) << 0) | ((c3 == c4) << 1) | (O3hit << 2) | (O4hit << 3) | (O5hit << 4) | ((salt & 0x3) << 5);
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {
@@ -245,7 +251,10 @@ protected:
   }
 
   void setContext(Context *pctx) {
-    if constexpr (nCtx > 0) pctx[0] = MixCtx;
+    if constexpr (nCtx > 0) pctx[0] = MixCtx0;
+    if constexpr (nCtx > 1) pctx[1] = MixCtx1;
+    if constexpr (nCtx > 2) pctx[2] = MixCtx2;
+    if constexpr (nCtx > 3) pctx[3] = MixCtx3;
   }
 };
 
