@@ -15,7 +15,7 @@ namespace paqFe::internal {
   OP(1, 0) SEP \
   OP(2, 1) SEP \
   OP(3, 2) SEP \
-  OP(4, 3)
+  OP(4, 3) 
 
 #define DECARE_ADDRWIDTH(order, id) size_t O##order##AddrWidth
 
@@ -54,9 +54,11 @@ protected:
   // bytewise context
   uint8_t C0 = 0; // current byte
   uint64_t C = 0;
-
+  int salt = 0;
+  Context MixCtx = 0;
 public:
-  static constexpr int nProb = 4;
+  static constexpr int nProbPerOrder = 1;
+  static constexpr int nProb = 4 * nProbPerOrder;
   static constexpr int nCtx = 1;
 
   Orders() {
@@ -72,14 +74,13 @@ public:
     ORDERS(UPDATE_STATES, )
 #undef UPDATE_STATES
 
-    if(updateContext(bit))
-      selectLines();
+    updateContext(bit);
     
-#define PREDICTION(order, id) pp[id] = StaticStateMap::map[O##order##line->states[binary_idx]];
+#define PREDICTION(order, id) state2prob(O##order##line->states[binary_idx], &pp[id * nProbPerOrder]);
     ORDERS(PREDICTION, )
 #undef PREDICTION
     
-    *pctx = get_context();
+    setContext(pctx);
   }
 
   void predict_byte(uint8_t byte, Prob *pp, Context *pctx, size_t pstride, size_t ctxstride) {
@@ -88,36 +89,33 @@ public:
     uint8_t nibble0 = byte >> 4;
     uint8_t nibble1 = byte & 0xF;
 
-#define PREDICTI_NIBBLE(order, id) predict_nibble(nibble0, O##order##line, pp + id, pstride);
+#define PREDICTI_NIBBLE(order, id) \
+    predict_nibble(nibble0, O##order##line, pp + id * nProbPerOrder, pstride);
+
     ORDERS(PREDICTI_NIBBLE, )
 #undef PREDICTI_NIBBLE
 
-    Context ctx = get_context();
     for(int i=0;i<4;i++)
-      pctx[i*ctxstride] = ctx;
+      setContext(&pctx[i*ctxstride]);
 
     updateContextNibble1(nibble0);
-    selectLines();
 
 #define PREDICTI_NIBBLE(order, id) \
-    predict_nibble(nibble1, O##order##line, pp + 4 * pstride + id, pstride);
+    predict_nibble(nibble1, O##order##line, pp + 4 * pstride + id * nProbPerOrder, pstride);
     
     ORDERS(PREDICTI_NIBBLE, )
 #undef PREDICTI_NIBBLE
     
-    ctx = get_context();
     for(int i=4;i<8;i++)
-      pctx[i*ctxstride] = ctx;
+      setContext(&pctx[i*ctxstride]);
 
     updateContextNibble0(nibble1);
-    selectLines();
 
     if(first) {
-#define FORCE_PROBEVEN(order, id) pp[id] = ProbEven;
-    ORDERS(FORCE_PROBEVEN, )
-#undef FORCE_PROBEVEN
-
-      pctx[0] = 0;
+      for(int i=0;i<nProb;i++) 
+        pp[i] = ProbEven;
+      for(int i=0;i<nCtx;i++) 
+        pctx[i] = 0;
       first = false;
     }
   }
@@ -156,12 +154,14 @@ protected:
   }
 
   bool updateContextNibble0(uint8_t nibble) {
+    salt += 1;
     C = ((C << 4) | nibble);
     C1 = (C & 0xFF) << 5;
     C2 = (C & 0xFFFF) << 5;
     C3 = (C & 0xFFFFFF) << 5;
     C4 = (C & 0xFFFFFFFF) << 5;
     updateHash();
+    selectLines();
 
     return true;
   }
@@ -172,6 +172,7 @@ protected:
     ORDERS(UPDATE_CONTEXT, )
 #undef UPDATE_CONTEXT
     updateHash();
+    selectLines();
 
     return true;
   }
@@ -184,9 +185,17 @@ protected:
   }
 
   void selectLines() {
-#define SELECT_LINE(order, id) O##order##line = selLine(O##order##lines, C##order, H##order, &O##order##hit);
+#define SELECT_LINE(order, id) O##order##line = selLine(O##order##lines, C##order >> 5, H##order, &O##order##hit);
     ORDERS(SELECT_LINE, )
 #undef SELECT_LINE
+
+    uint32_t c0 = C0;
+    uint32_t c1 = C & 0xFF;
+    uint32_t c2 = (C >> 8) & 0xFF;
+    uint32_t c3 = (C >> 16) & 0xFF;
+    uint32_t c4 = C;
+
+    MixCtx = (O1hit + O2hit + O3hit + O4hit) | ((salt & 0x3) << 2);
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {
@@ -204,6 +213,14 @@ protected:
     return l;
   }
 
+  void state2prob(State s, Prob *pp) {
+    Prob p1 = pp[0] = StaticStateMap::map[s];
+    Prob p0 = 4096 - p1;
+    if constexpr (nProbPerOrder > 1) {
+      pp[1] = p0;
+    }
+  }
+
   void predict_nibble(uint8_t nibble, Line *l, Prob* pp, size_t stride) {
     int idx0 = 1 + (nibble >> 3);
     int idx1 = 3 + (nibble >> 2);
@@ -211,21 +228,21 @@ protected:
 
     State* states = l->states;
 
-    pp[0] = StaticStateMap::map[states[0]];
+    state2prob(states[0], &pp[stride * 0]);
     states[0].next((nibble >> 3) & 0x1);
 
-    pp[1 * stride] = StaticStateMap::map[states[idx0]];
+    state2prob(states[idx0], &pp[stride * 1]);
     states[idx0].next((nibble >> 2) & 0x1);
 
-    pp[2 * stride] = StaticStateMap::map[states[idx1]];
+    state2prob(states[idx1], &pp[stride * 2]);
     states[idx1].next((nibble >> 1) & 0x1);
 
-    pp[3 * stride] = StaticStateMap::map[states[idx2]];
+    state2prob(states[idx2], &pp[stride * 3]);
     states[idx2].next((nibble >> 0) & 0x1);
   }
 
-  Context get_context() {
-    return (O1hit + O2hit + O3hit + O4hit);
+  void setContext(Context *pctx) {
+    if constexpr (nCtx > 0) pctx[0] = MixCtx;
   }
 };
 
