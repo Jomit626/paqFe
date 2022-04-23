@@ -5,7 +5,7 @@
 
 #include "../types.hpp"
 #include "StateMap.hpp"
-#include "ContextMap.hpp"
+#include "ContextMap2.hpp"
 
 namespace paqFe::internal {
 
