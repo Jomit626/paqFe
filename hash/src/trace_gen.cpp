@@ -6,7 +6,8 @@
 #include "paqFe/models/Orders.hpp"
 using namespace paqFe::internal;
 
-class OrdersCtx : Orders<> {
+class OrdersCtx : Orders<12,16,16,17,17> {
+  using Parent = Orders<12,16,16,17,17>;
 public:
   void predict_byte(uint8_t byte, uint64_t *CS) {
     uint8_t nibble0 = byte >> 4;
@@ -16,20 +17,22 @@ public:
     CS[1] = C2;
     CS[2] = C3;
     CS[3] = C4;
+    CS[4] = C5;
 
-    Orders<>::updateContextNibble0(nibble0);
-    CS[4 + 0] = C1;
-    CS[4 + 1] = C2;
-    CS[4 + 2] = C3;
-    CS[4 + 3] = C4;
+    Parent::updateContextNibble0(nibble0);
+    CS[5 + 0] = C1;
+    CS[5 + 1] = C2;
+    CS[5 + 2] = C3;
+    CS[5 + 3] = C4;
+    CS[5 + 4] = C5;
 
-    Orders<>::updateContextNibble0(nibble1);
+    Parent::updateContextNibble0(nibble1);
   }
 };
 
 void start(FILE* fin, FILE* fout) {
   OrdersCtx &model = *new OrdersCtx();
-  uint64_t CS[8];
+  uint64_t CS[10];
   uint8_t data[128];
   size_t n = 0;
   while((n = fread(data, 1, 128, fin))) {
@@ -37,7 +40,7 @@ void start(FILE* fin, FILE* fout) {
       uint8_t byte = data[i];
       model.predict_byte(byte, CS);
 
-      fprintf(fout, "%lu,%lu,%lu,%lu\n%lu,%lu,%lu,%lu\n", CS[0], CS[1], CS[2], CS[3], CS[4], CS[5], CS[6], CS[7]);
+      fprintf(fout, "%lu,%lu,%lu,%lu,%lu\n%lu,%lu,%lu,%lu,%lu\n", CS[0], CS[1], CS[2], CS[3], CS[4], CS[5], CS[6], CS[7], CS[8], CS[9]);
     }
   }
 

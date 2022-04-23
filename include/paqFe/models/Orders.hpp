@@ -15,7 +15,8 @@ namespace paqFe::internal {
   OP(1, 0) SEP \
   OP(2, 1) SEP \
   OP(3, 2) SEP \
-  OP(4, 3) 
+  OP(4, 3) SEP \
+  OP(5, 4) 
 
 #define DECARE_ADDRWIDTH(order, id) size_t O##order##AddrWidth
 
@@ -58,7 +59,7 @@ protected:
   Context MixCtx = 0;
 public:
   static constexpr int nProbPerOrder = 1;
-  static constexpr int nProb = 4 * nProbPerOrder;
+  static constexpr int nProb = 5 * nProbPerOrder;
   static constexpr int nCtx = 1;
 
   Orders() {
@@ -160,6 +161,7 @@ protected:
     C2 = (C & 0xFFFF) << 5;
     C3 = (C & 0xFFFFFF) << 5;
     C4 = (C & 0xFFFFFFFF) << 5;
+    C5 = (C & 0xFFFFFFFFFF) << 5;
     updateHash();
     selectLines();
 
@@ -179,9 +181,10 @@ protected:
 
   void updateHash() {
     H1 = C1 & O1Mask;
-    H2 = tab_hashing<21, 16>(O2HashTab, C2) & O2Mask;
-    H3 = tab_hashing<29, 16>(O3HashTab, C3) & O3Mask;
-    H4 = tab_hashing<34, 17>(O4HashTab, C4) & O4Mask;
+    H2 = tab_hashing<21, O2AddrWidth>(O2HashTab, C2) & O2Mask;
+    H3 = tab_hashing<29, O3AddrWidth>(O3HashTab, C3) & O3Mask;
+    H4 = tab_hashing<37, O4AddrWidth>(O4HashTab, C4) & O4Mask;
+    H5 = tab_hashing<45, O5AddrWidth>(O5HashTab, C5) & O5Mask;
   }
 
   void selectLines() {
@@ -195,7 +198,7 @@ protected:
     uint32_t c3 = (C >> 16) & 0xFF;
     uint32_t c4 = C;
 
-    MixCtx = (O1hit + O2hit + O3hit + O4hit) | ((salt & 0x3) << 2);
+    MixCtx = (O1hit + O2hit + O3hit + O4hit + O5hit) | ((salt & 0x3) << 3);
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {

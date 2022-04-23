@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
 
   FILE *c_file = fopen("../include/paqFe/models/TabHash.h", "w");
   FILE *scala_file = fopen("../include/paqFe/models/TabHash.scala", "w");
-  fprintf(c_file, "//! This file is automatic generated. DO NOT MODIFY.\n\n");
+  fprintf(c_file, "//! This file is automatic generated. DO NOT MODIFY.\n#pragma once\n\n");
   fprintf(scala_file, "//! This file is automatic generated. DO NOT MODIFY.\n\n");
 
   Trace trace(input_pathname);
@@ -92,6 +92,7 @@ int main(int argc, char** argv) {
   gen<21,16>(trace.getTrace(2), "O2HashTab", c_file, scala_file);
   gen<29,16>(trace.getTrace(3), "O3HashTab", c_file, scala_file);
   gen<37,17>(trace.getTrace(4), "O4HashTab", c_file, scala_file);
+  gen<45,18>(trace.getTrace(5), "O5HashTab", c_file, scala_file);
 
   fclose(c_file);
   fclose(scala_file);
