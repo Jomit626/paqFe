@@ -9,15 +9,20 @@
 #include "TabHash.hpp"
 #include "TabHash.h"
 
-constexpr size_t log2(size_t x) {
-  return (size_t)std::log2l(x);
-}
-
 namespace paqFe::internal {
+#define DOT ,
+#define ORDERS(OP, SEP) \
+  OP(1, 0) SEP \
+  OP(2, 1) SEP \
+  OP(3, 2) SEP \
+  OP(4, 3)
 
-template< size_t O2Size = 1ul << 20,
-          size_t O3Size = 1ul << 20,
-          size_t O4Size = 1ul << 21>
+#define DECARE_ADDRWIDTH(order, id) size_t O##order##AddrWidth
+
+template<
+  ORDERS(DECARE_ADDRWIDTH, DOT)
+  >
+#undef DECARE_ADDRWIDTH
 class Orders {
 protected:
   struct Line {
@@ -25,24 +30,20 @@ protected:
     uint8_t checksum; 
   };
 
-  static constexpr size_t O1Size = 1ul << 16;
-#define DECARE_SIZE(name) \
-  static constexpr size_t name##LineCnt = name##Size / sizeof(Line); \
-  static constexpr size_t name##Mask = name##LineCnt - 1;  \
-  static_assert(isPow2(name##Size));  \
-  static_assert(isPow2(sizeof(Line)));
+#define DECARE_VAR(order, id) \
+  static constexpr size_t O##order##LineSize = 1ul << O##order##AddrWidth; \
+  static constexpr size_t O##order##Mask = O##order##LineSize - 1;  \
+  static_assert(isPow2(sizeof(Line)));  \
+  \
+  Line O##order##lines[O##order##LineSize]; \
+  Line* O##order##line = O##order##lines; \
+  bool O##order##hit = true;  \
+  \
+  uint64_t C##order = 0; \
+  uint64_t H##order = 0;
 
-  DECARE_SIZE(O1)
-  DECARE_SIZE(O2)
-  DECARE_SIZE(O3)
-  DECARE_SIZE(O4)
-
-#undef DECARE_SIZE
-
-  Line o1_lines[O1LineCnt];
-  Line o2_lines[O2LineCnt];
-  Line o3_lines[O3LineCnt];
-  Line o4_lines[O4LineCnt];
+  ORDERS(DECARE_VAR, )
+#undef DECARE_VAR
 
   bool first = true;
 
@@ -50,57 +51,33 @@ protected:
   int counter = 0;
   int binary_idx = 0;
 
-  Line* o1_line = o1_lines;
-  bool o1_hit = true;
-  Line* o2_line = o2_lines;
-  bool o2_hit = true;
-  Line* o3_line = o3_lines;
-  bool o3_hit = true;
-  Line* o4_line = o4_lines;
-  bool o4_hit = true;
-
   // bytewise context
   uint8_t C0 = 0; // current byte
-  uint32_t C1 = 0;     // prev byte
-  uint32_t C2 = 0;
-  uint32_t C3 = 0;
-  uint64_t C4 = 0;
   uint64_t C = 0;
-
-  uint32_t h1 = 0;
-  uint32_t h2 = 0;
-  uint32_t h3 = 0;
-  uint32_t h4 = 0;
 
 public:
   static constexpr int nProb = 4;
   static constexpr int nCtx = 1;
-  static constexpr int CtxShift = 2;
 
   Orders() {
-    std::memset(o1_lines, 0X00, sizeof(o1_lines));
-    std::memset(o2_lines, 0X00, sizeof(o2_lines));
-    std::memset(o3_lines, 0X00, sizeof(o3_lines));
-    std::memset(o4_lines, 0X00, sizeof(o4_lines));
+#define MEMSET_ZERO(order, id) std::memset(O##order##lines, 0X00, sizeof(O##order##lines));
+  ORDERS(MEMSET_ZERO, )
+#undef MEMSET_ZERO
   }
 
   void predict(uint8_t bit, Prob *pp, Context *pctx) {
     if(first) first = false;
 
-    // update states
-    o1_line->states[binary_idx].next(bit);
-    o2_line->states[binary_idx].next(bit);
-    o3_line->states[binary_idx].next(bit);
-    o4_line->states[binary_idx].next(bit);
+#define UPDATE_STATES(order, id) O##order##line->states[binary_idx].next(bit);
+    ORDERS(UPDATE_STATES, )
+#undef UPDATE_STATES
 
     if(updateContext(bit))
       selectLines();
-
-    // do prediction
-    pp[0] = StaticStateMap::map[o1_line->states[binary_idx]];
-    pp[1] = StaticStateMap::map[o2_line->states[binary_idx]];
-    pp[2] = StaticStateMap::map[o3_line->states[binary_idx]];
-    pp[3] = StaticStateMap::map[o4_line->states[binary_idx]];
+    
+#define PREDICTION(order, id) pp[id] = StaticStateMap::map[O##order##line->states[binary_idx]];
+    ORDERS(PREDICTION, )
+#undef PREDICTION
     
     *pctx = get_context();
   }
@@ -111,11 +88,9 @@ public:
     uint8_t nibble0 = byte >> 4;
     uint8_t nibble1 = byte & 0xF;
 
-    
-    predict_nibble(nibble0, o1_line, pp, pstride);
-    predict_nibble(nibble0, o2_line, pp + 1, pstride);
-    predict_nibble(nibble0, o3_line, pp + 2, pstride);
-    predict_nibble(nibble0, o4_line, pp + 3, pstride);
+#define PREDICTI_NIBBLE(order, id) predict_nibble(nibble0, O##order##line, pp + id, pstride);
+    ORDERS(PREDICTI_NIBBLE, )
+#undef PREDICTI_NIBBLE
 
     Context ctx = get_context();
     for(int i=0;i<4;i++)
@@ -124,10 +99,11 @@ public:
     updateContextNibble1(nibble0);
     selectLines();
 
-    predict_nibble(nibble1, o1_line, pp + 4 * pstride, pstride);
-    predict_nibble(nibble1, o2_line, pp + 4 * pstride + 1, pstride);
-    predict_nibble(nibble1, o3_line, pp + 4 * pstride + 2, pstride);
-    predict_nibble(nibble1, o4_line, pp + 4 * pstride + 3, pstride);
+#define PREDICTI_NIBBLE(order, id) \
+    predict_nibble(nibble1, O##order##line, pp + 4 * pstride + id, pstride);
+    
+    ORDERS(PREDICTI_NIBBLE, )
+#undef PREDICTI_NIBBLE
     
     ctx = get_context();
     for(int i=4;i<8;i++)
@@ -137,10 +113,10 @@ public:
     selectLines();
 
     if(first) {
-      pp[0] = ProbEven;
-      pp[1] = ProbEven;
-      pp[2] = ProbEven;
-      pp[3] = ProbEven;
+#define FORCE_PROBEVEN(order, id) pp[id] = ProbEven;
+    ORDERS(FORCE_PROBEVEN, )
+#undef FORCE_PROBEVEN
+
       pctx[0] = 0;
       first = false;
     }
@@ -192,27 +168,25 @@ protected:
 
   bool updateContextNibble1(uint8_t nibble) {
     C = ((C << 4) | nibble);
-    C1 = C1 + nibble + 16;
-    C2 = C2 + nibble + 16;
-    C3 = C3 + nibble + 16;
-    C4 = C4 + nibble + 16;
+#define UPDATE_CONTEXT(order, id) C##order = C##order + nibble + 16;
+    ORDERS(UPDATE_CONTEXT, )
+#undef UPDATE_CONTEXT
     updateHash();
 
     return true;
   }
 
   void updateHash() {
-    h1 = C1 & O1Mask;
-    h2 = tab_hashing<21, 16>(O2HashTab, C2) & O2Mask;
-    h3 = tab_hashing<29, 16>(O3HashTab, C3) & O3Mask;
-    h4 = tab_hashing<34, 17>(O4HashTab, C4) & O4Mask;
+    H1 = C1 & O1Mask;
+    H2 = tab_hashing<21, 16>(O2HashTab, C2) & O2Mask;
+    H3 = tab_hashing<29, 16>(O3HashTab, C3) & O3Mask;
+    H4 = tab_hashing<34, 17>(O4HashTab, C4) & O4Mask;
   }
 
   void selectLines() {
-    o1_line = selLine(o1_lines, C1, h1, &o1_hit);
-    o2_line = selLine(o2_lines, C2, h2, &o2_hit);
-    o3_line = selLine(o3_lines, C3, h3, &o3_hit);
-    o4_line = selLine(o4_lines, C4, h4, &o4_hit);
+#define SELECT_LINE(order, id) O##order##line = selLine(O##order##lines, C##order, H##order, &O##order##hit);
+    ORDERS(SELECT_LINE, )
+#undef SELECT_LINE
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {
@@ -251,7 +225,7 @@ protected:
   }
 
   Context get_context() {
-    return (o1_hit + o2_hit + o3_hit + o4_hit);
+    return (O1hit + O2hit + O3hit + O4hit);
   }
 };
 
