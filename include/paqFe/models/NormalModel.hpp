@@ -15,10 +15,10 @@ template<
   int C3AddrBits = 16,
   int C4AddrBits = 16,
   int C5AddrBits = 16,
-  int C6AddrBits = 16,
-  int C7AddrBits = 16,
-  int C9AddrBits = 16,
-  int C12AddrBits = 16
+  int C6AddrBits = 17,
+  int C7AddrBits = 17,
+  int C9AddrBits = 17,
+  int C12AddrBits = 17
 >
 class NormalModel {
 protected:
@@ -43,7 +43,7 @@ protected:
 
 public:
   static constexpr int nProb = decltype(cm1)::nProb * 9;
-  static constexpr int nCtx = 7;
+  static constexpr int nCtx = 1;
 
   NormalModel() {
     for(int i=0;i<15;i++) {
@@ -76,6 +76,7 @@ public:
     uint32_t c;
     order = max(order - 2, 0);
     pctx[0] = (order << 3) | counter;
+    /*
     pctx[1] = 8 + (
       (c1 & 0xFF) | 
       (static_cast<int>(bpos > 5) << 8U) | 
@@ -98,6 +99,7 @@ public:
       c = c3 >> 7U | (c4 >> 31U) << 1U | (c2 >> 6U) << 2U | (c1 & 240U);
     }
     pctx[6] = c;
+    */
   }
 
   /*
