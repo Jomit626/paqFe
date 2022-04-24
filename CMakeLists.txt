@@ -7,8 +7,8 @@ project(
   HOMEPAGE_URL "https://github.com/Jomit626/paqFe"
   )
 
-option(BUILD_VERIFY "Build Verify Tools for RTL Model" on)
 option(BUILD_HASH "Build Hash Tools for Models" on)
+option(BUILD_PAQFE "Build Compressor" on)
 option(BUILD_TESTING "Build test" on)
 
 add_library(${PROJECT_NAME} INTERFACE)
@@ -24,5 +24,4 @@ aux_source_directory($<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/include> He
 target_sources(${PROJECT_NAME} PUBLIC ${HeaderSrcs})
 
 include(test/CMakeLists.txt)
-include(verify/CMakeLists.txt)
 include(hash/CMakeLists.txt)

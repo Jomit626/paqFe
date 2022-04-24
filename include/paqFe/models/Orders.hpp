@@ -33,6 +33,7 @@ protected:
   };
 
 #define DECARE_VAR(order, id) \
+  static constexpr size_t O##order##AddrWidth0 = O##order##AddrWidth; \
   static constexpr size_t O##order##LineSize = 1ul << O##order##AddrWidth; \
   static constexpr size_t O##order##Mask = O##order##LineSize - 1;  \
   static_assert(isPow2(sizeof(Line)));  \
