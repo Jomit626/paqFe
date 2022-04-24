@@ -12,7 +12,7 @@ namespace paqFe {
 class paqFeFile {
 public:
   using Model = internal::ModelGroup<
-                          internal::Orders<12, 16, 16, 17, 17, 17>
+                          internal::OrdersDefault
                           //internal::ModelSimpleBytePredict<internal::NormalModel<>>
                           //internal::ModelSimpleBytePredict<internal::Orders<12,16,16,17,17>>
                           >;

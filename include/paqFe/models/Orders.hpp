@@ -198,7 +198,7 @@ protected:
     H3 = tab_hashing<29, O3AddrWidth>(O3HashTab, C3) & O3Mask;
     H4 = tab_hashing<37, O4AddrWidth>(O4HashTab, C4) & O4Mask;
     H5 = tab_hashing<45, O5AddrWidth>(O5HashTab, C5) & O5Mask;
-    HWord = CWord & OWordMask;
+    HWord = (CWord ^ (CWord >> 32) ^ (CWord >> 16)) & OWordMask;
   }
   uint32_t prevHitVec = 0;
   uint32_t prevHitVec2 = 0;
@@ -224,12 +224,6 @@ protected:
     } else {
       highRunLevel = 0;
     }
-  // 25.821600 %.
-  // 25.797100 % only hit vecs
-  // 25.808400 % with run level
-  // 25.783500 %
-  // 25.134400 % with word
-  // 25.402700 % more ctx
     int n = 0;
     MixCtx[n++] = (salt & 0x3) | (hitVec << 2);
     MixCtx[n++] = (salt & 0x3) | ((prevHitVec & hitVec) << 2);
@@ -261,7 +255,7 @@ protected:
     Prob p1 = pp[0] = StaticStateMap::map[s];
     Prob p0 = 4096 - p1;
     if constexpr (nProbPerOrder > 1) {
-      if(s.one_cnt() && s.zero_cnt()) {
+      if(s.one_cnt() || s.zero_cnt()) {
         pp[1] = p1;
       } else {
         pp[1] = ProbEven;
@@ -294,5 +288,7 @@ protected:
       pctx[i] = MixCtx[i];
   }
 };
+
+using OrdersDefault = Orders<12, 16, 16, 17, 17, 17>;
 
 }

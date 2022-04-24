@@ -23,7 +23,7 @@ protected:
   Context prev_ctx[nHidden];
   int counter = 0;
   static constexpr int BatchSize = 128;
-  int Layer1LR = 18;
+  int Layer1LR = 31;
   int Layer2LR = 15;
 public:
 
