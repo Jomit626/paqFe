@@ -16,7 +16,8 @@ namespace paqFe::internal {
   OP(2, 1) SEP \
   OP(3, 2) SEP \
   OP(4, 3) SEP \
-  OP(5, 4) 
+  OP(5, 4) SEP \
+  OP(Word, 5)
 
 #define DECARE_ADDRWIDTH(order, id) size_t O##order##AddrWidth
 
@@ -56,14 +57,12 @@ protected:
   uint8_t C0 = 0; // current byte
   uint64_t C = 0;
   int salt = 0;
-  Context MixCtx0 = 0;
-  Context MixCtx1 = 0;
-  Context MixCtx2 = 0;
-  Context MixCtx3 = 0;
+  
+  Context MixCtx[8] = {};
 public:
   static constexpr int nProbPerOrder = 1;
-  static constexpr int nProb = 5 * nProbPerOrder;
-  static constexpr int nCtx = 4;
+  static constexpr int nProb = 6 * nProbPerOrder;
+  static constexpr int nCtx = 6;
 
   Orders() {
 #define MEMSET_ZERO(order, id) std::memset(O##order##lines, 0X00, sizeof(O##order##lines));
@@ -113,7 +112,7 @@ public:
     for(int i=4;i<8;i++)
       setContext(&pctx[i*ctxstride]);
 
-    updateContextNibble0(nibble1);
+    updateContextNibble0(nibble1, byte);
 
     if(first) {
       for(int i=0;i<nProb;i++) 
@@ -138,9 +137,10 @@ protected:
       binary_idx = 2 * binary_idx + 1;
 
     C0 = (C0 << 1) | bit;
-    uint8_t nibble = C0 & 0xF;
     if(counter == 8) {
-      updateContextNibble0(nibble);
+      uint8_t nibble = C0 & 0xF;
+      uint8_t byte = C0 & 0xFF;
+      updateContextNibble0(nibble, byte);
 
       C0 = 0;
 
@@ -148,6 +148,7 @@ protected:
       binary_idx = 0;
       return true;
     } else if(counter == 4){
+      uint8_t nibble = C0 & 0xF;
       updateContextNibble1(nibble);
 
       binary_idx = 0;
@@ -157,7 +158,7 @@ protected:
     return false;
   }
 
-  bool updateContextNibble0(uint8_t nibble) {
+  bool updateContextNibble0(uint8_t nibble, uint8_t byte) {
     salt += 1;
     C = ((C << 4) | nibble);
     C1 = (C & 0xFF) << 5;
@@ -165,6 +166,15 @@ protected:
     C3 = (C & 0xFFFFFF) << 5;
     C4 = (C & 0xFFFFFFFF) << 5;
     C5 = (C & 0xFFFFFFFFFF) << 5;
+    
+    if (byte>=65 && byte<=90)
+      byte += 32;
+    
+    if ((byte>=97 && byte<=122)) {
+      CWord = ((CWord + byte) * (7 << 3));
+    } else {
+      CWord = 0;
+    }
     updateHash();
     selectLines();
 
@@ -188,23 +198,48 @@ protected:
     H3 = tab_hashing<29, O3AddrWidth>(O3HashTab, C3) & O3Mask;
     H4 = tab_hashing<37, O4AddrWidth>(O4HashTab, C4) & O4Mask;
     H5 = tab_hashing<45, O5AddrWidth>(O5HashTab, C5) & O5Mask;
+    HWord = CWord & OWordMask;
   }
-
+  uint32_t prevHitVec = 0;
+  uint32_t prevHitVec2 = 0;
+  int wordRunLevel = 0;
+  int prevWordRunLevel = 0;
+  int highRunLevel = 0;
   void selectLines() {
-#define SELECT_LINE(order, id) O##order##line = selLine(O##order##lines, C##order >> 5, H##order, &O##order##hit);
+#define SELECT_LINE(order, id) O##order##line = selLine(O##order##lines, C##order, H##order, &O##order##hit);
     ORDERS(SELECT_LINE, )
 #undef SELECT_LINE
 
-    uint32_t c0 = C0;
-    uint32_t c1 = C & 0xFF;
-    uint32_t c2 = (C >> 8) & 0xFF;
-    uint32_t c3 = (C >> 16) & 0xFF;
-    uint32_t c4 = (C >> 24) & 0xFF;
+    prevWordRunLevel = wordRunLevel;
+    wordRunLevel = (wordRunLevel << 1) & 0x3F;
+    if (OWordhit && CWord != 0) {
+      wordRunLevel |= 1;
+    }
 
-    MixCtx0 = (O1hit + O2hit + O3hit + O4hit + O5hit) | ((salt & 0x3) << 3);
-    MixCtx1 = (O1hit << 0) | (O2hit << 1) | (O3hit << 2) | (O4hit << 3) | (O5hit << 4) | ((salt & 0x3) << 5);
-    MixCtx2 = ((c1 == c2) << 0) | ((c1 == c3) << 1) | ((c1 == c3) << 2) | ((c1 == c4) << 3) | ((c2 == c3 << 3) << 4) | ((salt & 0x3) << 5);
-    MixCtx3 = ((c2 == c4) << 0) | ((c3 == c4) << 1) | (O3hit << 2) | (O4hit << 3) | (O5hit << 4) | ((salt & 0x3) << 5);
+    uint32_t hitVec = (O1hit << 0) | (O2hit << 1) | (O3hit << 2) | (O4hit << 3) | (O5hit << 4) | (OWordhit << 5);
+    if (O5hit) {
+      if(highRunLevel < 31) {
+        highRunLevel += 1;
+      }
+    } else {
+      highRunLevel = 0;
+    }
+  // 25.821600 %.
+  // 25.797100 % only hit vecs
+  // 25.808400 % with run level
+  // 25.783500 %
+  // 25.134400 % with word
+  // 25.402700 % more ctx
+    int n = 0;
+    MixCtx[n++] = (salt & 0x3) | (hitVec << 2);
+    MixCtx[n++] = (salt & 0x3) | ((prevHitVec & hitVec) << 2);
+    MixCtx[n++] = (salt & 0x3) | ((prevHitVec2 & hitVec) << 2);
+    MixCtx[n++] = (salt & 0x3) | (wordRunLevel << 2);
+    MixCtx[n++] = (salt & 0x3) | (prevWordRunLevel  << 2);
+    MixCtx[n++] = (salt & 0x3) | (highRunLevel << 2);
+
+    prevHitVec2 = prevHitVec;
+    prevHitVec = hitVec;
   }
 
   Line* selLine(Line* lines, uint32_t val, uint32_t hashval, bool *hit) {
@@ -226,7 +261,11 @@ protected:
     Prob p1 = pp[0] = StaticStateMap::map[s];
     Prob p0 = 4096 - p1;
     if constexpr (nProbPerOrder > 1) {
-      pp[1] = p0;
+      if(s.one_cnt() && s.zero_cnt()) {
+        pp[1] = p1;
+      } else {
+        pp[1] = ProbEven;
+      }
     }
   }
 
@@ -251,10 +290,8 @@ protected:
   }
 
   void setContext(Context *pctx) {
-    if constexpr (nCtx > 0) pctx[0] = MixCtx0;
-    if constexpr (nCtx > 1) pctx[1] = MixCtx1;
-    if constexpr (nCtx > 2) pctx[2] = MixCtx2;
-    if constexpr (nCtx > 3) pctx[3] = MixCtx3;
+    for(int i=0;i<nCtx;i++)
+      pctx[i] = MixCtx[i];
   }
 };
 

@@ -22,9 +22,9 @@ protected:
   Prob prev_prob = ProbEven;
   Context prev_ctx[nHidden];
   int counter = 0;
-  static constexpr int BatchSize = 1024;
-  static constexpr int Layer1LR = 7;
-  static constexpr int Layer2LR = 2;
+  static constexpr int BatchSize = 128;
+  int Layer1LR = 18;
+  int Layer2LR = 15;
 public:
 
   Mixer() {
@@ -66,6 +66,9 @@ public:
     counter ++;
     if(counter  == BatchSize) {
       counter = 0;
+      if(Layer2LR >= 4) {
+        Layer2LR -= 1;
+      }
       vecAdd(W1, dW1, nHidden);
       memset(dW1,0,sizeof(dW1));
     }
