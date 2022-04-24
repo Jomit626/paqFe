@@ -161,6 +161,7 @@ protected:
 
   bool updateContextNibble0(uint8_t nibble, uint8_t byte) {
     salt += 1;
+
     C = ((C << 4) | nibble);
     C1 = (C & 0xFF) << 5;
     C2 = (C & 0xFFFF) << 5;
@@ -168,11 +169,16 @@ protected:
     C4 = (C & 0xFFFFFFFF) << 5;
     C5 = (C & 0xFFFFFFFFFF) << 5;
     
-    if (byte>=65 && byte<=90)
+    bool isWord = false;
+    if (byte>=65 && byte<=90) {
       byte += 32;
+      isWord = true;
+    } else if ((byte>=97 && byte<=122)) {
+      isWord = true;
+    }
     
-    if ((byte>=97 && byte<=122)) {
-      CWord = ((CWord + byte) * (7 << 3));
+    if (isWord) {
+      CWord = (CWord ^ byte) << 5;
     } else {
       CWord = 0;
     }
@@ -201,6 +207,7 @@ protected:
     H5 = tab_hashing<45, O5AddrWidth>(O5HashTab, C5) & O5Mask;
     HWord = (CWord ^ (CWord >> 32) ^ (CWord >> 16)) & OWordMask;
   }
+
   uint32_t prevHitVec = 0;
   uint32_t prevHitVec2 = 0;
   int wordRunLevel = 0;
