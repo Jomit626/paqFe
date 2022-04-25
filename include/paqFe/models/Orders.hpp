@@ -218,13 +218,12 @@ protected:
     ORDERS(SELECT_LINE, )
 #undef SELECT_LINE
 
-    prevWordRunLevel = wordRunLevel;
     wordRunLevel = (wordRunLevel << 1) & 0x3F;
-    if (OWordhit && CWord != 0) {
+    if (OWordhit && HWord != 0) {
       wordRunLevel |= 1;
     }
 
-    uint32_t hitVec = (O1hit << 0) | (O2hit << 1) | (O3hit << 2) | (O4hit << 3) | (O5hit << 4) | (OWordhit << 5);
+    uint32_t hitVec = (O1hit << 5) | (O2hit << 4) | (O3hit << 3) | (O4hit << 2) | (O5hit << 1) | (OWordhit << 0);
     if (O5hit) {
       if(highRunLevel < 31) {
         highRunLevel += 1;
@@ -240,6 +239,7 @@ protected:
     MixCtx[n++] = (salt & 0x3) | (prevWordRunLevel  << 2);
     MixCtx[n++] = (salt & 0x3) | (highRunLevel << 2);
 
+    prevWordRunLevel = wordRunLevel;
     prevHitVec2 = prevHitVec;
     prevHitVec = hitVec;
   }
