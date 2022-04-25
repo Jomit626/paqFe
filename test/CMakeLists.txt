@@ -8,12 +8,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 
   endfunction(add_test_target_i TEST_NAME)
 
-  add_executable(paqfe test/src/paqfe.cpp)
-  target_link_libraries(paqfe PUBLIC paqFe)
-
-  add_executable(paqfebw test/src/paqfebw.cpp)
-  target_link_libraries(paqfebw PUBLIC paqFe)
-
   add_test_target_i(statemap)
   add_test_target_i(usage)
   add_test_target_i(orders)
@@ -26,3 +20,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   add_test(NAME StateMapCheck COMMAND state)
   add_test(NAME PreictorCheck COMMAND predictor)
 endif()
+
+if(BUILD_PAQFE)
+
+add_executable(paqfe test/src/paqfe.cpp)
+target_link_libraries(paqfe PUBLIC paqFe)
+
+add_executable(paqfebw test/src/paqfebw.cpp)
+target_link_libraries(paqfebw PUBLIC paqFe)
+
+endif(BUILD_PAQFE)

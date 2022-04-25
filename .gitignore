@@ -12,6 +12,7 @@
 !hash
 
 test/data
+test/big_data
 verify/data
 verify/db
 eval/result

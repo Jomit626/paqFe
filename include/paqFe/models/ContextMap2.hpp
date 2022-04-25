@@ -31,10 +31,10 @@ union Line {
 protected:
   static constexpr size_t N = 1 << AddrBits;
   AssociativeHashMap<Line, uint8_t, sizeof(Line) * N, 16> hashmap;
-  StateMap<1 << 10> sm2[8];
+  //StateMap<1 << 10> sm2[8];
 
-  StateMap<1 << 5> bhMap5[8];
-  StateMap<1 << 9> bhMap9[8];
+  //StateMap<1 << 5> bhMap5[8];
+  //StateMap<1 << 9> bhMap9[8];
 
   bool first = true;
   uint8_t counter = 0;
@@ -44,8 +44,7 @@ protected:
   State *active_line;
   int binary_idx = 0;
 public:
-  static constexpr int nProb = 8;
-  static constexpr int CtxShift = 0;
+  static constexpr int nProb = 1;
 
   State* pState;
   ContextMap() {
@@ -59,9 +58,9 @@ public:
   void predict(uint8_t bit, uint64_t ctx, Prob *pp, int *cnt) {
     if(first) first = false;
 
-    sm2[counter].update(bit);
-    bhMap5[counter].update(bit);
-    bhMap9[counter].update(bit);
+    //sm2[counter].update(bit);
+    //bhMap5[counter].update(bit);
+    //bhMap9[counter].update(bit);
 
     pState->next(bit);
 
@@ -72,17 +71,21 @@ public:
     const int bp = (0xFEA4U >> (bpos << 1U)) & 3U; // {0}->0  {1}->1  {2,3,4}->2  {5,6,7}->3
     int pis = smask + (C0 & smask);
     pState = &active_line[pis];
+    /*
     if(((l0->slot0.c1 + 0x100) >> (8 - bpos)) == C0) {
       const int predictedBit = BitSel(l0->slot0.c1, bpos);
       const int byte1IsUncertain = static_cast<const int>(l0->slot0.c1 != l0->slot0.c2);
       const int runCount = l0->slot0.cnt;
       int c = runCount << 2U | byte1IsUncertain << 1 | predictedBit;
-      sm2[counter].predict(c, &pp[5]);
+      sm2[counter].predict(c, &pp[1]);
     } else{
-      sm2[counter].predict(0, &pp[5]);
+      sm2[counter].predict(0, &pp[1]);
     }
-  
+    */
     Prob p1 = StaticStateMap::map[*pState];
+    pp[0] = p1;
+    //pp[1] = 4096 - p1;
+    /*
     int n0 = pState->zero_cnt();
     int n1 = pState->one_cnt();
     int bitIsUncertain = n0 != 0 && n1 != 0;
@@ -124,6 +127,7 @@ public:
     const uint8_t stateGroup = pState->group();
     bhMap5[counter].predict((bitIsUncertain << 4) | (bhState), &pp[6]);
     bhMap9[counter].predict((stateGroup << 4) | bhState, &pp[7]);
+    */
   }
 
   Prob pnxt[nProb] = {ProbEven};

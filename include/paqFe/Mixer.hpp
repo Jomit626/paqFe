@@ -7,6 +7,8 @@
 
 namespace paqFe::internal {
 
+// TODO: Refactor mixer with fixpoint numbers
+
 template<int nFeature, int nHidden>
 class Mixer {
 protected:
@@ -20,9 +22,9 @@ protected:
   Prob prev_prob = ProbEven;
   Context prev_ctx[nHidden];
   int counter = 0;
-  static constexpr int BatchSize = 1024;
-  static constexpr int Layer1LR = 7;
-  static constexpr int Layer2LR = 3;
+  static constexpr int BatchSize = 128;
+  const int Layer1LR = 31;
+  const int Layer2LR = 4;
 public:
 
   Mixer() {
@@ -50,18 +52,10 @@ public:
       int ctx = pctx[k] & 0xFF;
       prev_ctx[k] = ctx;
       int32_t y = dot(X, W[k][ctx], nFeature) >> 16;
-      if(y > 2047)
-        y = 2047;
-      else if(y <= -2048)
-        y = -2048;
-      X1[k] = y;
+      X1[k] = probStretchedClamp(y);
     }
     int y = (dot(X1, W1, nHidden)) >> 16;
-    if(y > 2047)
-      y = 2047;
-    else if(y <= -2048)
-      y = -2048;
-    *pp = prev_prob = LUT.squash(y);
+    *pp = prev_prob = LUT.squash(probStretchedClamp(y));
   }
 
   void update(uint8_t bit) {
@@ -103,11 +97,7 @@ protected:
 
   void vecAdd(int32_t* a, int32_t* b, size_t n){
     for(int i=0;i<n;i++) {
-      a[i] += b[i];
-      if(a[i] > 65535)
-        a[i] = 65535;
-      else if(a[i] < -65536)
-        a[i] = -65536;
+      a[i] = weightClamp(a[i] + b[i]);
     }
   }
 
@@ -115,11 +105,29 @@ protected:
     return ((bit << 12) - y) * lr;
   }
 
+  int32_t probStretchedClamp(int32_t probStretched) {
+    if(probStretched > 2047)
+      probStretched = 2047;
+    else if(probStretched <= -2048)
+      probStretched = -2048;
+    
+    return probStretched;
+  }
+
+  Weight weightClamp(Weight w) {
+    if(w > 65535)
+      w = 65535;
+    else if(w < -65536)
+      w = -65536;
+    
+    return w;
+  }
+
   void train(Weight *w, int32_t *x, size_t len, Prob y, uint8_t bit, int lr) {
     int loss = lossCal(y, bit, lr);
 
     for(int i=0;i<len;i++) {
-      w[i] = w[i] + ((x[i] * loss ) >> 16U);
+      w[i] = weightClamp(w[i] + ((x[i] * loss ) >> 16U));
     }
   }
 

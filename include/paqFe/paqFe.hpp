@@ -12,7 +12,9 @@ namespace paqFe {
 class paqFeFile {
 public:
   using Model = internal::ModelGroup<
-                          internal::Orders<>
+                          internal::OrdersDefault
+                          //internal::ModelSimpleBytePredict<internal::NormalModel<>>
+                          //internal::ModelSimpleBytePredict<internal::Orders<12,16,16,17,17>>
                           >;
   using Mixer = internal::Mixer<Model::nProb, Model::nCtx>;
   using Predictor = internal::Predictor<8, Model, Mixer>;
