@@ -23,8 +23,8 @@ protected:
   Context prev_ctx[nHidden];
   int counter = 0;
   static constexpr int BatchSize = 128;
-  int Layer1LR = 31;
-  int Layer2LR = 15;
+  const int Layer1LR = 31;
+  const int Layer2LR = 4;
 public:
 
   Mixer() {
@@ -66,9 +66,6 @@ public:
     counter ++;
     if(counter  == BatchSize) {
       counter = 0;
-      if(Layer2LR >= 4) {
-        Layer2LR -= 1;
-      }
       vecAdd(W1, dW1, nHidden);
       memset(dW1,0,sizeof(dW1));
     }
