@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
     paqFeFile *fout = new paqFeFile(output_pathname, OpMode::Compress);
     FILE* fin = fopen(input_pathname, "rb");
     uint8_t buf[1024];
-    size_t n;
+    ssize_t n;
     while((n = fread(buf, 1, 1024, fin))) {
       fout->write(buf, n);
     }
@@ -66,12 +66,16 @@ int main(int argc, char** argv) {
     delete fout;
   } else {
     paqFeFile *fin = new paqFeFile(input_pathname, OpMode::Decompress);
-    printf("origin size:%ld\n", fin->size());
+    if(verobse) printf("origin size:%ld\n", fin->size());
     FILE* fout = fopen(output_pathname, "wb");
     uint8_t buf[1024];
 
-    size_t n;
+    ssize_t n;
     while((n = fin->read(buf, 1024))) {
+      if(n < 0) {
+        fprintf(stderr, "Warning: CRC error!\n");
+        break;
+      }
       fwrite(buf, 1, n, fout);
     }
 
