@@ -5,7 +5,7 @@ PROJ_FOLDER="$(dirname "$0")/.."
 DATA_FOLDER="$PROJ_FOLDER/test/data"
 
 mkdir -p $DATA_FOLDER
-mkdir -p $VERIFY_DATA_FOLDER
+# mkdir -p $VERIFY_DATA_FOLDER
 
 cd $DATA_FOLDER
 

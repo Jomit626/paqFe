@@ -126,6 +126,8 @@ public:
 template<size_t size>
 class StateMap {
 public:
+
+
   struct StateInfo
   {
     int32_t prob;
@@ -141,12 +143,28 @@ private:
   StateInfo infos[size];
 
 public:
-  StateMap() {
-    for(int i=0;i<size;i++) {
-      infos[i].prob = (1 << 21);
-      infos[i].count = 0;
-    }
-  };
+// bpos is the position of bit: [0,7]
+  StateMap(int bpos, MAPTYPE type) {
+    if(type == Generic){
+      printf("Generic Statemap\n");
+      for(int i=0;i<size;i++) {
+        infos[i].prob = (1 << 21);
+        infos[i].count = 0;
+      } 
+    } else if(type == Run){
+        printf("RUN Statemap\n");
+        for(int i=0;i<size;i++){
+          // TO DO: stateMap should be General
+          // MatchModel's context is (length | bit | C0)
+          int expectedBit = (i >> bpos) & 1U;
+          int length = (i >> bpos) & 0XfU;
+          int sign = expectedBit == 0 ? -1 : 1;
+          int p = 2048 + sign * length *(2048 / (length + 1));
+          infos[i].prob = p << 10;
+          infos[i].count = 0;
+        } 
+      }
+  }
 
   void predict(uint32_t state, Prob *pp) {
     state_prev = state & SizeMask;

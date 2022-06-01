@@ -12,6 +12,12 @@ enum OpMode {
   Decompress
 };
 
+enum MAPTYPE {
+    Generic, 
+    BitHistory, 
+    Run
+};
+
 namespace internal {
 
 typedef int32_t Weight;

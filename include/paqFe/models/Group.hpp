@@ -24,6 +24,7 @@ private:
 #undef AttributeSumDeclare
 public:
 
+  // 计算模型参数中输出的预测数量以及可信上下文的数量
   static constexpr int nProb = nProbSum<Models...>();
   static constexpr int nCtx = nCtxSum<Models...>();
 

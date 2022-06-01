@@ -21,6 +21,10 @@ namespace paqFe::internal {
 
 #define DECARE_ADDRWIDTH(order, id) size_t O##order##AddrWidth
 
+// 定义n阶模型模板参数
+// template<
+//   size_t O1AddrWidth , size_t O2AddrWidth , size_t O3AddrWidth , size_t O4AddrWidth , size_t O5AddrWidth , size_t OWordAddrWidth
+//   >
 template<
   ORDERS(DECARE_ADDRWIDTH, DOT)
   >
@@ -31,6 +35,13 @@ protected:
     State states[15];
     uint8_t checksum; 
   };
+//  定义n阶模型参数, 例如
+//  static constexpr size_t O1AddrWidth0 = O1AddrWidth; 
+//  static constexpr size_t O1LineSize = 1ul << O1AddrWidth; 
+//  static constexpr size_t O1Mask = O1LineSize - 1; 
+//  static_assert(isPow2(sizeof(Line))); 
+//  Line O1lines[O1LineSize]; Line* O1line = O1lines; 
+//  bool O1hit = true; uint64_t C1 = 0; uint64_t H1 = 0; 
 
 #define DECARE_VAR(order, id) \
   static constexpr size_t O##order##AddrWidth0 = O##order##AddrWidth; \
@@ -66,6 +77,8 @@ public:
   static constexpr int nCtx = 6;
 
   Orders() {
+//  初始化
+//  std::memset(O1lines, 0X00, sizeof(O1lines));
 #define MEMSET_ZERO(order, id) std::memset(O##order##lines, 0X00, sizeof(O##order##lines));
   ORDERS(MEMSET_ZERO, )
 #undef MEMSET_ZERO
@@ -272,9 +285,9 @@ protected:
   }
 
   void predict_nibble(uint8_t nibble, Line *l, Prob* pp, size_t stride) {
-    int idx0 = 1 + (nibble >> 3);
-    int idx1 = 3 + (nibble >> 2);
-    int idx2 = 7 + (nibble >> 1);
+    int idx0 = 1 + (nibble >> 3);   // 1 <= id0 <= 2
+    int idx1 = 3 + (nibble >> 2);   // 3 <= id0 <= 6
+    int idx2 = 7 + (nibble >> 1);   // 7 <= id0 <= 14
 
     State* states = l->states;
 

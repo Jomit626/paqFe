@@ -12,7 +12,7 @@ done
 PROJ_FOLDER="$(realpath $(dirname "$0")/..)"
 PQAFE="$PROJ_FOLDER/build/paqfe"
 
-DATA_FOLDER="$PROJ_FOLDER/test/data"
+DATA_FOLDER="$PROJ_FOLDER/test/data/Silesia"
 TMP_FOLDER="$PROJ_FOLDER/tmp"
 LAST_RESULT_FILE="$TMP_FOLDER/result.tmp"
 
@@ -30,10 +30,10 @@ do
 
   # compress and decompress
   $PQAFE -c -i $DATA_FOLDER/$file -o $TMP_FOLDER/$file.paqfe > $TMP_FOLDER/$file.log
-  $PQAFE -x -i $TMP_FOLDER/$file.paqfe -o $TMP_FOLDER/$file > $TMP_FOLDER/$file.c.log
+  # $PQAFE -x -i $TMP_FOLDER/$file.paqfe -o $TMP_FOLDER/$file > $TMP_FOLDER/$file.c.log
 
   # test result
-  diff $DATA_FOLDER/$file $TMP_FOLDER/$file  >/dev/null
+  diff $DATA_FOLDER/$file $DATA_FOLDER/$file  >/dev/null
   diff_res=$?
 
   # cal ratio

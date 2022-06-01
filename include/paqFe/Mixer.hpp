@@ -12,9 +12,11 @@ namespace paqFe::internal {
 template<int nFeature, int nHidden>
 class Mixer {
 protected:
+  // 输入层到隐藏层权重
   Weight W[nHidden][256][nFeature];
   int32_t X[nFeature];
 
+  
   Weight W1[nHidden];
   Weight dW1[nHidden];
   int32_t X1[nHidden];
@@ -44,7 +46,10 @@ public:
       X[i] = LUT.stretch(ProbEven);
   }
 
+  // P 为模型输出的二维概率数组，行为比特位置，列为模型预测该比特位置的概率
+  // PP 为8个比特位置混合出来的概率
   void predict(const Prob* P, const Context *pctx, Prob *pp) {
+    // 对输出的 0 ~ 4096概率进行stretch变化成 -2048 ~ +2048
     for(int i=0;i<nFeature;i++)
       X[i] = LUT.stretch(P[i]);
 
