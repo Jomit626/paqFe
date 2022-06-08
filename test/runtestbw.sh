@@ -1,21 +1,27 @@
 #!/bin/bash
+# Test block wise
+# usage: runtestbw.sh [block size]
+
+BLOCKSIZE=128
 
 set -e
-
-BLOCKSIZE=256
+re='^[0-9]+$'
+if [[ $1 =~ $re ]] ; then
+  BLOCKSIZE=$1
+fi
+echo Block Size: $BLOCKSIZE bytes
 
 PROJ_FOLDER="$(realpath $(dirname "$0")/..)"
 PQAFE="$PROJ_FOLDER/build/paqfebw"
 
-DATA_FOLDER="/home/jomit/tmp/testdata/blocktest"
-TMP_FOLDER="/home/jomit/tmp/testdata/tmp$BLOCKSIZE"
+DATA_FOLDER="$PROJ_FOLDER/test/data"
+TMP_FOLDER="$PROJ_FOLDER/tmp$BLOCKSIZE"
 
 mkdir -p "$TMP_FOLDER"
 rm -rf "$TMP_FOLDER"
 mkdir -p "$TMP_FOLDER"
 
 result=""
-echo $BLOCKSIZE KB
 echo -e file\\tresult\\torigin\\tcompressed\\trate
 for file in $(ls $DATA_FOLDER)
 do  
