@@ -60,7 +60,7 @@ protected:
 
 
 public:
-    static constexpr int nProb = 1;
+    static constexpr int nProb = 2;
     static constexpr int nCtx = 1;
     MatchModel() : sm1(0, MAPTYPE::Run),sm2(1, MAPTYPE::Run),sm3(2, MAPTYPE::Run),
     sm4(3, MAPTYPE::Run),sm5(4, MAPTYPE::Run),sm6(5, MAPTYPE::Run),sm7(6, MAPTYPE::Run),
@@ -86,6 +86,8 @@ public:
                     // 使用一个Order1 进行修正：
                     bitCtxMatch[bpos] = false;
                 }
+                const int sign = 2 * expectedBit - 1;
+                pp[pstride * bpos + 1] = 2048 + (sign * (length << 6U));
             }
 
             // TO DO: using "define " to call statemap's function
@@ -101,6 +103,7 @@ public:
         } else {
             for(int i = 0; i < 8; i++){
                 *(pp + i * pstride) = 0x800;
+                *(pp + i * pstride + 1) = 0x800;
             }
         }
         setContext(pctx,ctxstride);
