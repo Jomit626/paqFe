@@ -73,8 +73,10 @@ public:
     Context Ctxs[8][Model::nCtx];
     Context ctx[8];
 
+    // 使用多个模型预测当前字节的不同比特概率，输出不同比特位置的各个模型概率以及可行度上下文
     m.predict_byte(byte, &Ps[0][0], &Ctxs[0][0]);
 
+    // 
     for(int i=0;i<8;i++) {
       uint8_t bit = (byte >> (7 - i)) & 0x1;
 

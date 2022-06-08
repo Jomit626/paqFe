@@ -23,17 +23,27 @@ namespace paqFe::internal
 
 #define DECARE_ADDRWIDTH(order, id) size_t O##order##AddrWidth
 
-  template <
-      ORDERS(DECARE_ADDRWIDTH, DOT)>
+// 定义n阶模型模板参数
+// template<
+//   size_t O1AddrWidth , size_t O2AddrWidth , size_t O3AddrWidth , size_t O4AddrWidth , size_t O5AddrWidth , size_t OWordAddrWidth
+//   >
+template<
+  ORDERS(DECARE_ADDRWIDTH, DOT)
+  >
 #undef DECARE_ADDRWIDTH
-  class Orders
-  {
-  protected:
-    struct Line
-    {
-      State states[15];
-      uint8_t checksum;
-    };
+class Orders {
+protected:
+  struct Line {
+    State states[15];
+    uint8_t checksum; 
+  };
+//  定义n阶模型参数, 例如
+//  static constexpr size_t O1AddrWidth0 = O1AddrWidth; 
+//  static constexpr size_t O1LineSize = 1ul << O1AddrWidth; 
+//  static constexpr size_t O1Mask = O1LineSize - 1; 
+//  static_assert(isPow2(sizeof(Line))); 
+//  Line O1lines[O1LineSize]; Line* O1line = O1lines; 
+//  bool O1hit = true; uint64_t C1 = 0; uint64_t H1 = 0; 
 
 #define DECARE_VAR(order, id)                                              \
   static constexpr size_t O##order##AddrWidth0 = O##order##AddrWidth;      \
@@ -309,11 +319,10 @@ namespace paqFe::internal
       }
     }
 
-    void predict_nibble(uint8_t nibble, Line *l, Prob *pp, size_t stride)
-    {
-      int idx0 = 1 + (nibble >> 3);
-      int idx1 = 3 + (nibble >> 2);
-      int idx2 = 7 + (nibble >> 1);
+  void predict_nibble(uint8_t nibble, Line *l, Prob* pp, size_t stride) {
+    int idx0 = 1 + (nibble >> 3);   // 1 <= id0 <= 2
+    int idx1 = 3 + (nibble >> 2);   // 3 <= id0 <= 6
+    int idx2 = 7 + (nibble >> 1);   // 7 <= id0 <= 14
 
       State *states = l->states;
 

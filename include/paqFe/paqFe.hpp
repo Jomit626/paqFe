@@ -5,6 +5,7 @@
 #include "models/NormalModel.hpp"
 #include "models/BiasModel.hpp"
 #include "models/Orders.hpp"
+#include "models/MatchModel.hpp"
 #include "Mixer.hpp"
 
 namespace paqFe {
@@ -12,7 +13,8 @@ namespace paqFe {
 class paqFeFile {
 public:
   using Model = internal::ModelGroup<
-                          internal::OrdersDefault
+                          internal::OrdersDefault,
+                          internal::MatchModelDefault
                           //internal::ModelSimpleBytePredict<internal::NormalModel<>>
                           //internal::ModelSimpleBytePredict<internal::Orders<12,16,16,17,17>>
                           >;
