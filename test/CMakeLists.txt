@@ -27,4 +27,7 @@ if(BUILD_PAQFE)
 add_executable(paqfe test/src/paqfe.cpp)
 target_link_libraries(paqfe PUBLIC paqFe)
 
+add_executable(paqfebw test/src/paqfebw.cpp)
+target_link_libraries(paqfebw PUBLIC paqFe)
+
 endif(BUILD_PAQFE)
